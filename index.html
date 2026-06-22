@@ -7,59 +7,59 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-<style>html,body,#root{margin:0;padding:0;min-height:100%;} body{background:#faf8f4;}</style>
+<style>html,body,#root{margin:0;padding:0;min-height:100%;}body{background:#f7f6f3;}</style>
 </head>
-<body>
-<div id="root"></div>
+<body><div id="root"></div>
 <script type="text/babel">
 const {useState,useMemo,useRef,useEffect,useCallback}=React;
 
-/* ── SVG Icons ── */
+/* ── Icons ── */
 const Ic=({d,size=16})=><svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{d}</svg>;
-const Plus=({size=16})=><Ic size={size} d={<><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>}/>;
-const Trash=({size=16})=><Ic size={size} d={<><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></>}/>;
-const Edit=({size=16})=><Ic size={size} d={<><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></>}/>;
-const X=({size=16})=><Ic size={size} d={<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>}/>;
-const Users=({size=16})=><Ic size={size} d={<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></>}/>;
-const Dollar=({size=16})=><Ic size={size} d={<><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></>}/>;
-const Alert=({size=16})=><Ic size={size} d={<><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>}/>;
-const Ban=({size=16})=><Ic size={size} d={<><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></>}/>;
-const Clock=({size=16})=><Ic size={size} d={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>}/>;
-const Search=({size=16})=><Ic size={size} d={<><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>}/>;
-const Gear=({size=16})=><Ic size={size} d={<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></>}/>;
-const Floppy=({size=16})=><Ic size={size} d={<><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></>}/>;
-const DL=({size=16})=><Ic size={size} d={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>}/>;
-const BulkIcon=({size=16})=><Ic size={size} d={<><path d="M11 12H3M16 6H3M16 18H3M18 9v6M21 12h-6"/></>}/>;
-const Check2=({size=16})=><Ic size={size} d={<><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></>}/>;
-const Grid=({size=16})=><Ic size={size} d={<><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></>}/>;
-const ChevDown=({size=16})=><Ic size={size} d={<><polyline points="6 9 12 15 18 9"/></>}/>;
+const IPlus=({s=16})=><Ic size={s} d={<><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>}/>;
+const ITrash=({s=16})=><Ic size={s} d={<><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3-3h8"/></>}/>;
+const IEdit=({s=16})=><Ic size={s} d={<><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></>}/>;
+const IX=({s=16})=><Ic size={s} d={<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>}/>;
+const IUsers=({s=16})=><Ic size={s} d={<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></>}/>;
+const IDollar=({s=16})=><Ic size={s} d={<><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></>}/>;
+const IAlert=({s=16})=><Ic size={s} d={<><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>}/>;
+const IBan=({s=16})=><Ic size={s} d={<><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></>}/>;
+const IClock=({s=16})=><Ic size={s} d={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>}/>;
+const ISearch=({s=16})=><Ic size={s} d={<><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>}/>;
+const IGear=({s=16})=><Ic size={s} d={<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></>}/>;
+const ISave=({s=16})=><Ic size={s} d={<><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></>}/>;
+const IDL=({s=16})=><Ic size={s} d={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>}/>;
+const IBulk=({s=16})=><Ic size={s} d={<><path d="M11 12H3M16 6H3M16 18H3M18 9v6M21 12h-6"/></>}/>;
+const ICheck=({s=16})=><Ic size={s} d={<><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>}/>;
+const IGrid=({s=16})=><Ic size={s} d={<><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></>}/>;
+const ITrophy=({s=16})=><Ic size={s} d={<><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></>}/>;
+const ICloud=({s=16})=><Ic size={s} d={<><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></>}/>;
+const ILink=({s=16})=><Ic size={s} d={<><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></>}/>;
+const IFilter=({s=16})=><Ic size={s} d={<><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></>}/>;
+const IRefresh=({s=16})=><Ic size={s} d={<><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></>}/>;
 
 /* ── Constants ── */
 const FEE={PAID:"paid",FREE:"free",UNPAID:"unpaid"};
 const ST={NORMAL:"normal",CANCEL:"cancel",WAITING:"waiting"};
 const FEE_LBL={paid:"Paid",free:"Free",unpaid:"Unpaid"};
 const ST_LBL={normal:"Normal",cancel:"Cancelled",waiting:"Waiting"};
-const FEE_CLS={paid:"badge badge-paid",free:"badge badge-free",unpaid:"badge badge-unpaid"};
-const ST_CLS={normal:"badge badge-normal",cancel:"badge badge-cancel",waiting:"badge badge-waiting"};
+const FEE_CLS={paid:"b-paid",free:"b-free",unpaid:"b-unpaid"};
+const ST_CLS={normal:"b-normal",cancel:"b-cancel",waiting:"b-waiting"};
 
-/* ── Storage keys ── */
-const LS_GUESTS="egm2_guests";
-const LS_ROUNDS="egm2_rounds";
-const LS_FEE="egm2_fee";
-const LS_DIR="egm2_dir"; // directory stored separately — large
-
-function lsGet(k,def){try{const v=localStorage.getItem(k);return v?JSON.parse(v):def;}catch(e){return def;}}
+/* ── LocalStorage keys (fallback when no Sheet) ── */
+const LS={
+  GUESTS:"egm3_guests", ROUNDS:"egm3_rounds", FEE:"egm3_fee",
+  DIR:"egm3_dir", EVENT:"egm3_event", SHEET_URL:"egm3_sheet_url",
+  FINAL:"egm3_final"
+};
+function lsGet(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
-
-/* ── Directory: stored separately, accessed via ref ── */
-function loadDir(){return lsGet(LS_DIR,[]);}
-function saveDir(d){lsSet(LS_DIR,d);}
 
 /* ── Helpers ── */
 let _eid=Date.now();
-function newEid(){return String(++_eid);}
+function uid(){return String(++_eid);}
 function cx(...a){return a.filter(Boolean).join(" ");}
-function fmtMoney(n){return "$"+Number(n||0).toLocaleString("en-US",{minimumFractionDigits:0});}
+function fmtUSD(n){return "$"+Number(n||0).toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:2});}
+function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
 
 function sortGuests(guests,rounds){
   const ro={};rounds.forEach((r,i)=>ro[r.id]=i);
@@ -68,8 +68,7 @@ function sortGuests(guests,rounds){
       if(g.status==="normal"&&g.round)return 0;
       if(g.status==="normal"&&!g.round)return 1;
       if(g.status==="waiting")return 2;
-      if(g.status==="cancel")return 3;
-      return 4;
+      return 3;
     };
     const ra=rank(a),rb=rank(b);
     if(ra!==rb)return ra-rb;
@@ -78,49 +77,91 @@ function sortGuests(guests,rounds){
   });
 }
 
-function dlCSV(filename,rows){
-  const csv=rows.map(r=>r.map(c=>{const s=String(c??"");return(s.includes(",")||s.includes('"')||s.includes("\n"))?'"'+s.replace(/"/g,'""')+'"':s;}).join(",")).join("\n");
+function dlCSV(name,rows){
+  const csv=rows.map(r=>r.map(c=>{const s=String(c??"");return(s.includes(",")||s.includes('"'))?'"'+s.replace(/"/g,'""')+'"':s;}).join(",")).join("\n");
   const b=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});
   const u=URL.createObjectURL(b);const a=document.createElement("a");
-  a.href=u;a.download=filename;document.body.appendChild(a);a.click();
+  a.href=u;a.download=name;document.body.appendChild(a);a.click();
   document.body.removeChild(a);URL.revokeObjectURL(u);
 }
 
-function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
+/* ── Google Sheets Sync ── */
+async function sheetFetch(url,payload){
+  const res=await fetch(url,{method:"POST",body:JSON.stringify(payload),headers:{"Content-Type":"text/plain"}});
+  if(!res.ok)throw new Error("HTTP "+res.status);
+  return res.json();
+}
 
-/* ── Main App ── */
+/* ── App ── */
 function App(){
-  const [guests,setGuests]=useState(()=>lsGet(LS_GUESTS,[]));
-  const [rounds,setRounds]=useState(()=>lsGet(LS_ROUNDS,[{id:"r1",name:"Round 1",limit:20},{id:"r2",name:"Round 2",limit:20}]));
-  const [feeAmount,setFeeAmount]=useState(()=>lsGet(LS_FEE,50));
+  const [guests,setGuests]=useState(()=>lsGet(LS.GUESTS,[]));
+  const [rounds,setRounds]=useState(()=>lsGet(LS.ROUNDS,[{id:"r1",name:"Round 1",limit:20},{id:"r2",name:"Round 2",limit:20}]));
+  const [finalRound,setFinalRound]=useState(()=>lsGet(LS.FINAL,{enabled:false,name:"Final",prizePool:[]}));
+  const [feeAmt,setFeeAmt]=useState(()=>lsGet(LS.FEE,50));
+  const [eventName,setEventName]=useState(()=>lsGet(LS.EVENT,""));
+  const [sheetUrl,setSheetUrl]=useState(()=>lsGet(LS.SHEET_URL,""));
+  const [syncing,setSyncing]=useState(false);
+  const [syncMsg,setSyncMsg]=useState("");
   const [tab,setTab]=useState("overview");
+  const [filterTab,setFilterTab]=useState("all");
   const [search,setSearch]=useState("");
   const [roundSearch,setRoundSearch]=useState("");
   const [showForm,setShowForm]=useState(false);
   const [showBulk,setShowBulk]=useState(false);
+  const [showFinal,setShowFinal]=useState(false);
   const [editEid,setEditEid]=useState(null);
   const [formErr,setFormErr]=useState("");
-  const [form,setForm]=useState(emptyForm());
+  const [form,setForm]=useState(ef());
 
-  // Directory lives in a ref — NOT React state — to avoid re-renders
-  const dirRef=useRef(loadDir());
-  // but we need a counter to trigger re-renders of dir tab only
+  const dirRef=useRef(lsGet(LS.DIR,[]));
   const [dirVer,setDirVer]=useState(0);
-  function bumpDir(){setDirVer(v=>v+1);}
 
-  // Persist guests/rounds/fee (not directory — saved immediately on change)
-  useEffect(()=>lsSet(LS_GUESTS,guests),[guests]);
-  useEffect(()=>lsSet(LS_ROUNDS,rounds),[rounds]);
-  useEffect(()=>lsSet(LS_FEE,feeAmount),[feeAmount]);
+  /* Persist */
+  useEffect(()=>lsSet(LS.GUESTS,guests),[guests]);
+  useEffect(()=>lsSet(LS.ROUNDS,rounds),[rounds]);
+  useEffect(()=>lsSet(LS.FEE,feeAmt),[feeAmt]);
+  useEffect(()=>lsSet(LS.EVENT,eventName),[eventName]);
+  useEffect(()=>lsSet(LS.SHEET_URL,sheetUrl),[sheetUrl]);
+  useEffect(()=>lsSet(LS.FINAL,finalRound),[finalRound]);
 
-  function emptyForm(){return{memberId:"",name:"",tier:"",feeStatus:"unpaid",round:"",status:"normal",note:"",rejoin:false};}
+  function ef(){return{memberId:"",name:"",tier:"",feeStatus:"unpaid",round:"",status:"normal",note:""};}
 
-  /* dirMap: id->entry, built lazily */
   const dirMap=useMemo(()=>{
     const m={};dirRef.current.forEach(d=>m[d.id]={name:d.name,tier:d.tier||""});return m;
   },[dirVer]);
 
-  /* Stats */
+  /* Google Sheets sync */
+  async function syncToSheet(){
+    if(!sheetUrl){setSyncMsg("⚠️ No Sheet URL set. Go to Settings.");return;}
+    setSyncing(true);setSyncMsg("Syncing…");
+    try{
+      const payload={action:"write",eventName,guests,rounds,finalRound,feeAmt,timestamp:new Date().toISOString()};
+      const res=await sheetFetch(sheetUrl,payload);
+      setSyncMsg(res.ok?"✓ Synced to Sheet":"✗ "+res.error);
+    }catch(e){setSyncMsg("✗ "+e.message);}
+    setSyncing(false);
+    setTimeout(()=>setSyncMsg(""),4000);
+  }
+
+  async function syncFromSheet(){
+    if(!sheetUrl){setSyncMsg("⚠️ No Sheet URL set.");return;}
+    setSyncing(true);setSyncMsg("Loading from Sheet…");
+    try{
+      const res=await sheetFetch(sheetUrl,{action:"read"});
+      if(res.ok){
+        if(res.guests)setGuests(res.guests);
+        if(res.rounds)setRounds(res.rounds);
+        if(res.finalRound)setFinalRound(res.finalRound);
+        if(res.feeAmt!=null)setFeeAmt(res.feeAmt);
+        if(res.eventName)setEventName(res.eventName);
+        setSyncMsg("✓ Loaded from Sheet");
+      }else setSyncMsg("✗ "+res.error);
+    }catch(e){setSyncMsg("✗ "+e.message);}
+    setSyncing(false);
+    setTimeout(()=>setSyncMsg(""),4000);
+  }
+
+  /* Derived */
   const roundCounts=useMemo(()=>{
     const m={};rounds.forEach(r=>m[r.id]=0);
     guests.forEach(g=>{if(g.status==="normal"&&g.round&&m[g.round]!==undefined)m[g.round]++;});
@@ -136,17 +177,29 @@ function App(){
     const unassigned=active.filter(g=>!g.round);
     const cancelled=guests.filter(g=>g.status==="cancel");
     const waiting=guests.filter(g=>g.status==="waiting");
-    return{total:guests.length,active:active.length,assigned:assigned.length,
-      paid,free,unpaid,unassigned,cancelled,waiting,
-      totalCollected:paid.length*feeAmount};
-  },[guests,feeAmount]);
+    return{total:guests.length,active:active.length,
+      paid,free,unpaid,assigned,unassigned,cancelled,waiting,
+      collected:paid.length*feeAmt};
+  },[guests,feeAmt]);
 
   const sorted=useMemo(()=>sortGuests(guests,rounds),[guests,rounds]);
-  const filtered=useMemo(()=>{
+
+  const guestsByFilter=useMemo(()=>{
     const q=search.trim().toLowerCase();
-    if(!q)return sorted;
-    return sorted.filter(g=>g.memberId.toLowerCase().includes(q)||g.name.toLowerCase().includes(q)||(g.note||"").toLowerCase().includes(q));
-  },[sorted,search]);
+    let base;
+    switch(filterTab){
+      case"paid":base=stats.paid;break;
+      case"free":base=stats.free;break;
+      case"unpaid":base=stats.unpaid;break;
+      case"assigned":base=stats.assigned;break;
+      case"unassigned":base=stats.unassigned;break;
+      case"cancelled":base=stats.cancelled;break;
+      case"waiting":base=stats.waiting;break;
+      default:base=sorted;
+    }
+    if(!q)return base;
+    return base.filter(g=>g.memberId.toLowerCase().includes(q)||g.name.toLowerCase().includes(q)||(g.note||"").toLowerCase().includes(q));
+  },[sorted,stats,filterTab,search]);
 
   const roundSearchRes=useMemo(()=>{
     const q=roundSearch.trim().toLowerCase();
@@ -155,293 +208,318 @@ function App(){
   },[guests,roundSearch]);
 
   /* Actions */
-  function startAdd(){setForm(emptyForm());setEditEid(null);setFormErr("");setShowForm(true);}
-  function startEdit(g){setForm({memberId:g.memberId,name:g.name,tier:g.tier||"",feeStatus:g.feeStatus,round:g.round,status:g.status,note:g.note,rejoin:false});setEditEid(g.eid);setFormErr("");setShowForm(true);}
-  function closeForm(){setShowForm(false);setFormErr("");}
+  function startAdd(){setForm(ef());setEditEid(null);setFormErr("");setShowForm(true);}
+  function startEdit(g){setForm({memberId:g.memberId,name:g.name,tier:g.tier||"",feeStatus:g.feeStatus,round:g.round,status:g.status,note:g.note});setEditEid(g.eid);setFormErr("");setShowForm(true);}
 
-  function roundIsFull(roundId,excludeEid){
-    const r=rounds.find(r=>r.id===roundId);if(!r)return false;
-    // In same round, same memberId can't appear twice (even with rejoin)
-    return guests.filter(g=>g.round===roundId&&g.status==="normal"&&g.eid!==excludeEid).length>=r.limit;
+  function roundFull(rid,excl){
+    const r=rounds.find(r=>r.id===rid);if(!r)return false;
+    return guests.filter(g=>g.round===rid&&g.status==="normal"&&g.eid!==excl).length>=r.limit;
   }
-  function memberAlreadyInRound(memberId,roundId,excludeEid){
-    return guests.some(g=>g.memberId===memberId&&g.round===roundId&&g.status==="normal"&&g.eid!==excludeEid);
+  function memberInRound(mid,rid,excl){
+    return guests.some(g=>g.memberId===mid&&g.round===rid&&g.status==="normal"&&g.eid!==excl);
   }
 
-  function handleIdChange(id){
-    const entry=dirMap[id.trim()];
-    setForm(f=>({...f,memberId:id,name:entry?.name||f.name,tier:entry?.tier||f.tier}));
+  function onIdChange(id){
+    const e=dirMap[id.trim()];
+    setForm(f=>({...f,memberId:id,name:e?.name||f.name,tier:e?.tier||f.tier}));
   }
 
   function saveGuest(){
-    const memberId=form.memberId.trim(),name=form.name.trim();
-    if(!memberId)return setFormErr("Please enter a Member ID.");
-    if(!name)return setFormErr("Please enter a name.");
+    const mid=form.memberId.trim(),name=form.name.trim();
+    if(!mid)return setFormErr("Enter a Member ID.");
+    if(!name)return setFormErr("Enter a name.");
     if(form.status==="normal"&&form.round){
-      if(roundIsFull(form.round,editEid)){
-        const r=rounds.find(r=>r.id===form.round);
-        return setFormErr(`"${r?.name}" is full (limit ${r?.limit}).`);
-      }
-      if(memberAlreadyInRound(memberId,form.round,editEid)){
-        return setFormErr(`Member ${memberId} is already assigned to this round. Each member can only play once per round.`);
-      }
+      if(roundFull(form.round,editEid)){const r=rounds.find(r=>r.id===form.round);return setFormErr(`"${r?.name}" is full.`);}
+      if(memberInRound(mid,form.round,editEid))return setFormErr(`${mid} is already in this round.`);
     }
-    const g={
-      eid:editEid||newEid(),
-      memberId,name,tier:form.tier.trim(),
-      feeStatus:form.feeStatus,
-      round:form.status==="normal"?form.round:"",
-      status:form.status,note:form.note.trim()
-    };
-    if(editEid)setGuests(prev=>prev.map(x=>x.eid===editEid?g:x));
-    else setGuests(prev=>[...prev,g]);
+    const g={eid:editEid||uid(),memberId:mid,name,tier:form.tier.trim(),
+      feeStatus:form.feeStatus,round:form.status==="normal"?form.round:"",
+      status:form.status,note:form.note.trim()};
+    if(editEid)setGuests(p=>p.map(x=>x.eid===editEid?g:x));
+    else setGuests(p=>[...p,g]);
     setShowForm(false);setFormErr("");
   }
 
-  function delGuest(eid){setGuests(prev=>prev.filter(g=>g.eid!==eid));}
-  function updGuest(eid,patch){setGuests(prev=>prev.map(g=>g.eid===eid?{...g,...patch}:g));}
-
-  function tryAssignRound(eid,roundId){
+  function delGuest(eid){if(confirm("Delete this entry?"))setGuests(p=>p.filter(g=>g.eid!==eid));}
+  function upd(eid,patch){setGuests(p=>p.map(g=>g.eid===eid?{...g,...patch}:g));}
+  function tryRound(eid,rid){
     const g=guests.find(x=>x.eid===eid);if(!g)return false;
-    if(roundId){
-      if(roundIsFull(roundId,eid)){const r=rounds.find(r=>r.id===roundId);alert(`"${r?.name}" is full.`);return false;}
-      if(memberAlreadyInRound(g.memberId,roundId,eid)){alert(`Member ${g.memberId} is already in this round.`);return false;}
+    if(rid){
+      if(roundFull(rid,eid)){const r=rounds.find(r=>r.id===rid);alert(`"${r?.name}" is full.`);return false;}
+      if(memberInRound(g.memberId,rid,eid)){alert(`${g.memberId} already in this round.`);return false;}
     }
-    updGuest(eid,{round:roundId,status:"normal"});return true;
+    upd(eid,{round:rid,status:"normal"});return true;
   }
-  function setGuestStatus(eid,status){
-    const g=guests.find(x=>x.eid===eid);
-    updGuest(eid,{status,round:status==="normal"?g?.round:""});
-  }
-
-  function addRound(){setRounds(prev=>[...prev,{id:"r_"+Date.now().toString(36).slice(-5),name:`Round ${prev.length+1}`,limit:20}]);}
-  function updRoundName(id,name){setRounds(prev=>prev.map(r=>r.id===id?{...r,name}:r));}
-  function updRoundLimit(id,limit){setRounds(prev=>prev.map(r=>r.id===id?{...r,limit:Math.max(0,limit)}:r));}
-  function removeRound(id){
-    if(guests.some(g=>g.round===id&&g.status==="normal"))return alert("Cannot delete a round with assigned guests. Move them first.");
-    setRounds(prev=>prev.filter(r=>r.id!==id));
-  }
+  function setSt(eid,status){const g=guests.find(x=>x.eid===eid);upd(eid,{status,round:status==="normal"?g?.round:""});}
 
   function exportCSV(){
-    const rName=id=>rounds.find(r=>r.id===id)?.name||"";
-    dlCSV(`guests-${new Date().toISOString().slice(0,10)}.csv`,
-      [["Entry#","Member ID","Name","Tier","Fee","Round","Status","Note"],
-       ...sorted.map((g,i)=>[i+1,g.memberId,g.name,g.tier||"",FEE_LBL[g.feeStatus],g.round?rName(g.round):"",ST_LBL[g.status],g.note||""])]);
+    const rn=id=>rounds.find(r=>r.id===id)?.name||"";
+    dlCSV(`${eventName||"event"}-${new Date().toISOString().slice(0,10)}.csv`,
+      [["#","Member ID","Name","Tier","Fee","Round","Status","Note"],
+       ...sorted.map((g,i)=>[i+1,g.memberId,g.name,g.tier||"",FEE_LBL[g.feeStatus],g.round?rn(g.round):"",ST_LBL[g.status],g.note||""])]);
   }
 
   function bulkAdd(lines){
-    const existing=new Set(); // track memberId+round combos to prevent dupe in same round
-    guests.forEach(g=>{if(g.round&&g.status==="normal")existing.add(g.memberId);});
-    const created=[],skipped=[];
-    lines.forEach(rawId=>{
-      const id=rawId.trim();if(!id)return;
-      const entry=dirMap[id];
-      created.push({eid:newEid(),memberId:id,name:entry?.name||"(Unknown — please edit)",tier:entry?.tier||"",feeStatus:"unpaid",round:"",status:"normal",note:""});
+    const created=lines.filter(id=>id.trim()).map(rawId=>{
+      const id=rawId.trim();const e=dirMap[id];
+      return{eid:uid(),memberId:id,name:e?.name||"(Unknown — edit)",tier:e?.tier||"",feeStatus:"unpaid",round:"",status:"normal",note:""};
     });
-    if(created.length)setGuests(prev=>[...prev,...created]);
-    setShowBulk(false);
-    if(skipped.length)alert(`Skipped ${skipped.length}: ${skipped.join(", ")}`);
+    setGuests(p=>[...p,...created]);setShowBulk(false);
   }
 
-  const tp={rounds,onEdit:startEdit,onAssignRound:tryAssignRound,onSetStatus:setGuestStatus,onSetFee:(eid,fs)=>updGuest(eid,{feeStatus:fs})};
+  const tp={rounds,onEdit:startEdit,
+    onAssign:tryRound,onStatus:setSt,
+    onFee:(eid,fs)=>upd(eid,{feeStatus:fs})};
+
+  const FILTER_TABS=[
+    ["all","All",stats.total],
+    ["paid","Paid",stats.paid.length],
+    ["free","Free",stats.free.length],
+    ["unpaid","Unpaid",stats.unpaid.length],
+    ["assigned","Assigned",stats.assigned.length],
+    ["unassigned","Unassigned",stats.unassigned.length],
+    ["cancelled","Cancelled",stats.cancelled.length],
+    ["waiting","Waiting",stats.waiting.length],
+  ];
 
   return(
     <div className="app">
       <style>{CSS}</style>
+
+      {/* Header */}
       <header className="topbar">
         <div className="brand">
-          <div className="brand-mark">E</div>
+          <div className="bmark">E</div>
           <div>
-            <div className="brand-title">Event Guest Manager</div>
-            <div className="brand-sub">{stats.total} entries · {stats.active} active <span className="save-dot">● saved</span></div>
+            <div className="btitle">{eventName||"Event Guest Manager"}</div>
+            <div className="bsub">
+              {stats.total} entries · {stats.active} active
+              {syncMsg&&<span className={cx("smsg",syncMsg.startsWith("✓")?"smsg-ok":syncMsg.startsWith("✗")?"smsg-err":"smsg-info")}>{syncMsg}</span>}
+            </div>
           </div>
         </div>
-        <div className="topbar-actions">
-          <button className="btn btn-ghost btn-sm" onClick={exportCSV}><DL size={14}/> CSV</button>
-          <button className="btn btn-secondary btn-sm" onClick={()=>setShowBulk(true)}><BulkIcon size={14}/> Bulk</button>
-          <button className="btn btn-primary btn-sm" onClick={startAdd}><Plus size={14}/> Add</button>
+        <div className="hactions">
+          {sheetUrl&&<>
+            <button className="btn btn-ghost btn-xs" onClick={syncFromSheet} disabled={syncing} title="Pull from Sheet"><IRefresh s={13}/></button>
+            <button className="btn btn-ghost btn-xs" onClick={syncToSheet} disabled={syncing} title="Push to Sheet"><ICloud s={13}/></button>
+          </>}
+          <button className="btn btn-ghost btn-xs" onClick={exportCSV}><IDL s={13}/></button>
+          <button className="btn btn-sec btn-xs" onClick={()=>setShowBulk(true)}><IBulk s={13}/> Bulk</button>
+          <button className="btn btn-pri btn-xs" onClick={startAdd}><IPlus s={13}/> Add</button>
         </div>
       </header>
 
+      {/* Nav */}
       <nav className="tabs">
-        {[["overview","Overview",<Grid size={13}/>],["rounds","Rounds",<Users size={13}/>],["settings","Settings",<Gear size={13}/>]].map(([id,label,icon])=>(
-          <button key={id} className={cx("tab",tab===id&&"tab-active")} onClick={()=>setTab(id)}>{icon}{label}</button>
+        {[["overview","Overview",<IGrid s={13}/>],["rounds","Rounds",<IUsers s={13}/>],["final","Final",<ITrophy s={13}/>],["settings","Settings",<IGear s={13}/>]].map(([id,lbl,icon])=>(
+          <button key={id} className={cx("tab",tab===id&&"tab-on")} onClick={()=>setTab(id)}>{icon}{lbl}</button>
         ))}
       </nav>
 
       <main className="content">
-        {tab==="overview"&&(
-          <div className="stack">
-            <div className="stat-grid">
-              <StatCard icon={<Users size={17}/>} label="Total entries" value={stats.total}/>
-              <StatCard icon={<Check2 size={17}/>} label="Assigned" value={stats.assigned} sub={`of ${stats.active} active`}/>
-              <StatCard icon={<Dollar size={17}/>} label="Collected" value={fmtMoney(stats.totalCollected)} sub={`${stats.paid.length} paid`} tone="good"/>
-              <StatCard icon={<Dollar size={17}/>} label="Free" value={stats.free.length}/>
-              <StatCard icon={<Alert size={17}/>} label="Unpaid" value={stats.unpaid.length} tone={stats.unpaid.length>0?"warn":"default"}/>
-              <StatCard icon={<Clock size={17}/>} label="Unassigned" value={stats.unassigned.length} tone={stats.unassigned.length>0?"warn":"default"}/>
-              <StatCard icon={<Ban size={17}/>} label="Cancelled" value={stats.cancelled.length} tone="danger"/>
-              <StatCard icon={<Clock size={17}/>} label="Waiting" value={stats.waiting.length} tone="neutral"/>
+
+        {/* ── OVERVIEW ── */}
+        {tab==="overview"&&<div className="stack">
+          {/* Stats */}
+          <div className="sgrid">
+            <SC icon={<IUsers s={17}/>} label="Total" value={stats.total}/>
+            <SC icon={<ICheck s={17}/>} label="Assigned" value={stats.assigned.length} sub={`of ${stats.active}`}/>
+            <SC icon={<IDollar s={17}/>} label="Collected" value={fmtUSD(stats.collected)} sub={`${stats.paid.length} paid`} tone="good"/>
+            <SC icon={<IDollar s={17}/>} label="Free" value={stats.free.length}/>
+            <SC icon={<IAlert s={17}/>} label="Unpaid" value={stats.unpaid.length} tone={stats.unpaid.length>0?"warn":"def"}/>
+            <SC icon={<IClock s={17}/>} label="Unassigned" value={stats.unassigned.length} tone={stats.unassigned.length>0?"warn":"def"}/>
+            <SC icon={<IBan s={17}/>} label="Cancelled" value={stats.cancelled.length} tone="danger"/>
+            <SC icon={<IClock s={17}/>} label="Waiting" value={stats.waiting.length} tone="neutral"/>
+          </div>
+
+          {/* Guest list with filter tabs */}
+          <div className="panel">
+            <div className="panel-hdr">
+              <div className="ftabs">
+                {FILTER_TABS.map(([id,lbl,cnt])=>(
+                  <button key={id} className={cx("ftab",filterTab===id&&"ftab-on")} onClick={()=>setFilterTab(id)}>
+                    {lbl} <span className="ftab-cnt">{cnt}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="sbox">
+                <ISearch s={13}/>
+                <input placeholder="Search…" value={search} onChange={e=>setSearch(e.target.value)}/>
+                {search&&<button className="sclear" onClick={()=>setSearch("")}><IX s={12}/></button>}
+              </div>
             </div>
+            <GuestTable guests={guestsByFilter} onDel={delGuest} {...tp}/>
+          </div>
+        </div>}
+
+        {/* ── ROUNDS ── */}
+        {tab==="rounds"&&<div className="stack">
+          <div className="sbox sbox-wide">
+            <ISearch s={13}/>
+            <input placeholder="Search across all rounds…" value={roundSearch} onChange={e=>setRoundSearch(e.target.value)}/>
+            {roundSearch&&<button className="sclear" onClick={()=>setRoundSearch("")}><IX s={12}/></button>}
+          </div>
+          {roundSearchRes?(
             <div className="panel">
-              <div className="panel-header">
-                <h2>All entries</h2>
-                <div className="search-box">
-                  <Search size={14}/><input placeholder="Search ID, name, note…" value={search} onChange={e=>setSearch(e.target.value)}/>
-                  {search&&<button className="search-clear" onClick={()=>setSearch("")}><X size={13}/></button>}
-                </div>
-              </div>
-              <GuestTable guests={filtered} onDelete={delGuest} {...tp}/>
+              <div className="panel-hdr"><h2>Results <span className="dim">({roundSearchRes.length})</span></h2></div>
+              <GuestTable guests={roundSearchRes} onDel={()=>{}} hideStatus {...tp}/>
             </div>
-          </div>
-        )}
-
-        {tab==="rounds"&&(
-          <div className="stack">
-            <div className="search-box search-wide">
-              <Search size={14}/><input placeholder="Search across all rounds…" value={roundSearch} onChange={e=>setRoundSearch(e.target.value)}/>
-              {roundSearch&&<button className="search-clear" onClick={()=>setRoundSearch("")}><X size={13}/></button>}
-            </div>
-            {roundSearchRes?(
-              <div className="panel">
-                <div className="panel-header"><h2>Results <span className="muted-sm">({roundSearchRes.length})</span></h2></div>
-                <GuestTable guests={roundSearchRes} onDelete={()=>{}} hideStatus {...tp}/>
-              </div>
-            ):rounds.length===0?<div className="empty">No rounds. Go to Settings.</div>
-            :rounds.map(r=>{
-              const rg=guests.filter(g=>g.status==="normal"&&g.round===r.id)
-                .sort((a,b)=>a.memberId.localeCompare(b.memberId,undefined,{numeric:true}));
-              const cnt=roundCounts[r.id]||0,full=cnt>=r.limit;
-              return(
-                <div className="panel" key={r.id}>
-                  <div className="panel-header">
-                    <h2>{r.name} <span className="muted-sm">({cnt}/{r.limit})</span></h2>
-                    {full&&<span className="badge badge-unpaid">Full</span>}
-                  </div>
-                  <GuestTable guests={rg} onDelete={()=>{}} hideRound hideStatus {...tp}/>
+          ):rounds.length===0?<div className="empty">No rounds. Go to Settings.</div>
+          :rounds.map(r=>{
+            const rg=guests.filter(g=>g.status==="normal"&&g.round===r.id)
+              .sort((a,b)=>a.memberId.localeCompare(b.memberId,undefined,{numeric:true}));
+            const cnt=roundCounts[r.id]||0,full=cnt>=r.limit;
+            return(
+              <div className="panel" key={r.id}>
+                <div className="panel-hdr">
+                  <h2>{r.name} <span className="dim">({cnt}/{r.limit})</span></h2>
+                  {full&&<span className="badge b-unpaid">Full</span>}
                 </div>
-              );
-            })}
-          </div>
-        )}
+                <GuestTable guests={rg} onDel={()=>{}} hideRound hideStatus {...tp}/>
+              </div>
+            );
+          })}
+        </div>}
 
-        {tab==="settings"&&(
-          <SettingsTab
-            rounds={rounds} feeAmount={feeAmount} setFeeAmount={setFeeAmount}
-            updRoundName={updRoundName} updRoundLimit={updRoundLimit}
-            addRound={addRound} removeRound={removeRound} roundCounts={roundCounts}
-            dirRef={dirRef} dirVer={dirVer} bumpDir={bumpDir}
-          />
-        )}
+        {/* ── FINAL ── */}
+        {tab==="final"&&<FinalTab finalRound={finalRound} setFinalRound={setFinalRound} guests={guests} rounds={rounds}/>}
+
+        {/* ── SETTINGS ── */}
+        {tab==="settings"&&<SettingsTab
+          rounds={rounds} setRounds={setRounds}
+          feeAmt={feeAmt} setFeeAmt={setFeeAmt}
+          eventName={eventName} setEventName={setEventName}
+          sheetUrl={sheetUrl} setSheetUrl={setSheetUrl}
+          roundCounts={roundCounts}
+          dirRef={dirRef} dirVer={dirVer} setDirVer={setDirVer}
+        />}
       </main>
 
-      {showForm&&<GuestFormModal form={form} setForm={setForm} rounds={rounds} error={formErr}
-        isEdit={!!editEid} onClose={closeForm} onSave={saveGuest} onIdChange={handleIdChange}/>}
+      {showForm&&<GuestModal form={form} setForm={setForm} rounds={rounds} err={formErr}
+        isEdit={!!editEid} onClose={()=>{setShowForm(false);setFormErr("");}} onSave={saveGuest} onIdChange={onIdChange}/>}
       {showBulk&&<BulkModal onClose={()=>setShowBulk(false)} onSubmit={bulkAdd} dirMap={dirMap}/>}
     </div>
   );
 }
 
 /* ── StatCard ── */
-function StatCard({icon,label,value,sub,tone="default"}){
+function SC({icon,label,value,sub,tone="def"}){
   return(
-    <div className={cx("stat-card",`tone-${tone}`)}>
-      <div className="stat-icon">{icon}</div>
-      <div className="stat-value">{value}</div>
-      <div className="stat-label">{label}</div>
-      {sub&&<div className="stat-sub">{sub}</div>}
+    <div className={cx("sc","sc-"+tone)}>
+      <div className="sc-icon">{icon}</div>
+      <div className="sc-val">{value}</div>
+      <div className="sc-lbl">{label}</div>
+      {sub&&<div className="sc-sub">{sub}</div>}
     </div>
   );
 }
 
-/* ── Popover ── */
-function Popover({anchor,onClose,children}){
+/* ── Popover (mobile-friendly bottom sheet on small screens) ── */
+function Pop({anchor,onClose,children}){
   const ref=useRef(null);
+  const isMobile=window.innerWidth<600;
   useEffect(()=>{
-    const fn=e=>{if(ref.current&&!ref.current.contains(e.target)&&!anchor.current?.contains(e.target))onClose();};
-    document.addEventListener("mousedown",fn);return()=>document.removeEventListener("mousedown",fn);
+    const fn=e=>{
+      if(!isMobile&&ref.current&&!ref.current.contains(e.target)&&!anchor?.current?.contains(e.target))onClose();
+    };
+    document.addEventListener("mousedown",fn);
+    return()=>document.removeEventListener("mousedown",fn);
   },[onClose]);
-  return <div className="popover" ref={ref}>{children}</div>;
+
+  if(isMobile){
+    return(
+      <div className="pop-overlay" onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}}>
+        <div className="pop-sheet" ref={ref}>
+          <div className="pop-handle"/>
+          {children}
+        </div>
+      </div>
+    );
+  }
+  return <div className="pop-drop" ref={ref}>{children}</div>;
 }
 
-function FeeBadge({guest,onSetFee}){
+function FeeBadge({g,onFee}){
   const [open,setOpen]=useState(false);const ref=useRef(null);
   return(
-    <div className="bcell" ref={ref}>
-      <button className={cx(FEE_CLS[guest.feeStatus],"bbtn")} onClick={()=>setOpen(o=>!o)}>{FEE_LBL[guest.feeStatus]}</button>
-      {open&&<Popover anchor={ref} onClose={()=>setOpen(false)}>
+    <div className="bc" ref={ref}>
+      <button className={cx("badge",FEE_CLS[g.feeStatus],"bb")} onClick={()=>setOpen(o=>!o)}>{FEE_LBL[g.feeStatus]}</button>
+      {open&&<Pop anchor={ref} onClose={()=>setOpen(false)}>
+        <div className="pop-title">Fee status</div>
         {Object.values(FEE).map(fs=>(
-          <button key={fs} className={cx("pi",guest.feeStatus===fs&&"pi-active")} onClick={()=>{onSetFee(guest.eid,fs);setOpen(false);}}>
-            <span className={FEE_CLS[fs]}>{FEE_LBL[fs]}</span>
+          <button key={fs} className={cx("pi",g.feeStatus===fs&&"pi-on")} onClick={()=>{onFee(g.eid,fs);setOpen(false);}}>
+            <span className={cx("badge",FEE_CLS[fs])}>{FEE_LBL[fs]}</span>
           </button>
         ))}
-      </Popover>}
+      </Pop>}
     </div>
   );
 }
 
-function RoundBadge({guest,rounds,onAssignRound}){
+function RoundBadge({g,rounds,onAssign}){
   const [open,setOpen]=useState(false);const ref=useRef(null);
-  const rName=id=>rounds.find(r=>r.id===id)?.name;
-  const disabled=guest.status!=="normal";
+  const rn=id=>rounds.find(r=>r.id===id)?.name;
   return(
-    <div className="bcell" ref={ref}>
-      <button className={cx("bbtn",guest.round?"badge-round":"badge-unassigned")} disabled={disabled}
-        onClick={()=>!disabled&&setOpen(o=>!o)} title={disabled?"Restore to Normal first":""}>
-        {guest.round?rName(guest.round):"—"}
+    <div className="bc" ref={ref}>
+      <button className={cx("badge",g.round?"b-rnd":"b-unassigned","bb")} disabled={g.status!=="normal"}
+        onClick={()=>g.status==="normal"&&setOpen(o=>!o)} title={g.status!=="normal"?"Restore to Normal first":""}>
+        {g.round?rn(g.round):"—"}
       </button>
-      {open&&<Popover anchor={ref} onClose={()=>setOpen(false)}>
-        <button className={cx("pi",!guest.round&&"pi-active")} onClick={()=>{onAssignRound(guest.eid,"");setOpen(false);}}>Unassigned</button>
+      {open&&<Pop anchor={ref} onClose={()=>setOpen(false)}>
+        <div className="pop-title">Assign round</div>
+        <button className={cx("pi",!g.round&&"pi-on")} onClick={()=>{onAssign(g.eid,"");setOpen(false);}}>Unassigned</button>
         {rounds.map(r=>(
-          <button key={r.id} className={cx("pi",guest.round===r.id&&"pi-active")} onClick={()=>{if(onAssignRound(guest.eid,r.id))setOpen(false);}}>
+          <button key={r.id} className={cx("pi",g.round===r.id&&"pi-on")} onClick={()=>{if(onAssign(g.eid,r.id))setOpen(false);}}>
             {r.name}
           </button>
         ))}
-      </Popover>}
+      </Pop>}
     </div>
   );
 }
 
-function StatusBadge({guest,onSetStatus}){
+function StBadge({g,onStatus}){
   const [open,setOpen]=useState(false);const ref=useRef(null);
   return(
-    <div className="bcell" ref={ref}>
-      <button className={cx(ST_CLS[guest.status],"bbtn")} onClick={()=>setOpen(o=>!o)}>{ST_LBL[guest.status]}</button>
-      {open&&<Popover anchor={ref} onClose={()=>setOpen(false)}>
+    <div className="bc" ref={ref}>
+      <button className={cx("badge",ST_CLS[g.status],"bb")} onClick={()=>setOpen(o=>!o)}>{ST_LBL[g.status]}</button>
+      {open&&<Pop anchor={ref} onClose={()=>setOpen(false)}>
+        <div className="pop-title">Status</div>
         {Object.values(ST).map(s=>(
-          <button key={s} className={cx("pi",guest.status===s&&"pi-active")} onClick={()=>{onSetStatus(guest.eid,s);setOpen(false);}}>
-            <span className={ST_CLS[s]}>{ST_LBL[s]}</span>
+          <button key={s} className={cx("pi",g.status===s&&"pi-on")} onClick={()=>{onStatus(g.eid,s);setOpen(false);}}>
+            <span className={cx("badge",ST_CLS[s])}>{ST_LBL[s]}</span>
           </button>
         ))}
-      </Popover>}
+      </Pop>}
     </div>
   );
 }
 
 /* ── Guest Table ── */
-function GuestTable({guests,rounds,onEdit,onDelete,onAssignRound,onSetStatus,onSetFee,hideRound,hideStatus}){
-  if(!guests.length)return <div className="empty">No entries found.</div>;
+function GuestTable({guests,rounds,onEdit,onDel,onAssign,onStatus,onFee,hideRound,hideStatus}){
+  if(!guests.length)return <div className="empty">No entries.</div>;
   return(
-    <div className="table-wrap">
-      <table className="table">
+    <div className="tw">
+      <table className="tbl">
         <thead><tr>
-          <th>Member ID</th><th>Name</th><th>Tier</th><th>Fee</th>
+          <th>ID</th><th>Name</th><th>Tier</th><th>Fee</th>
           {!hideRound&&<th>Round</th>}
           {!hideStatus&&<th>Status</th>}
-          <th>Note</th><th></th>
+          <th>Note</th><th/>
         </tr></thead>
         <tbody>
           {guests.map(g=>(
             <tr key={g.eid}>
               <td className="mono">{g.memberId}</td>
-              <td className="name-cell">{g.name}</td>
-              <td><span className="tier-badge">{g.tier||<span className="muted">—</span>}</span></td>
-              <td><FeeBadge guest={g} onSetFee={onSetFee}/></td>
-              {!hideRound&&<td><RoundBadge guest={g} rounds={rounds} onAssignRound={onAssignRound}/></td>}
-              {!hideStatus&&<td><StatusBadge guest={g} onSetStatus={onSetStatus}/></td>}
-              <td className="note-cell">{g.note||<span className="muted">—</span>}</td>
-              <td className="act-cell">
-                <button className="ibtn" onClick={()=>onEdit(g)}><Edit size={13}/></button>
-                <button className="ibtn ibtn-d" onClick={()=>{if(confirm(`Delete entry for ${g.memberId} (${g.name})?`))onDelete(g.eid);}}><Trash size={13}/></button>
+              <td className="namec">{g.name}</td>
+              <td>{g.tier?<span className="tbadge">{g.tier}</span>:<span className="dim">—</span>}</td>
+              <td><FeeBadge g={g} onFee={onFee}/></td>
+              {!hideRound&&<td><RoundBadge g={g} rounds={rounds} onAssign={onAssign}/></td>}
+              {!hideStatus&&<td><StBadge g={g} onStatus={onStatus}/></td>}
+              <td className="notec">{g.note||<span className="dim">—</span>}</td>
+              <td className="actc">
+                <button className="ib" onClick={()=>onEdit(g)}><IEdit s={13}/></button>
+                <button className="ib ib-d" onClick={()=>onDel(g.eid)}><ITrash s={13}/></button>
               </td>
             </tr>
           ))}
@@ -451,444 +529,685 @@ function GuestTable({guests,rounds,onEdit,onDelete,onAssignRound,onSetStatus,onS
   );
 }
 
+/* ── Final Tab ── */
+const RANK_OPTIONS=[
+  {value:"champion",  label:"🥇 Champion"},
+  {value:"runner1",   label:"🥈 Runner-up 1"},
+  {value:"runner2",   label:"🥉 Runner-up 2"},
+  {value:"place4",    label:"4th Place"},
+  {value:"place5",    label:"5th Place"},
+  {value:"place6",    label:"6th Place"},
+  {value:"place7",    label:"7th Place"},
+  {value:"place8",    label:"8th Place"},
+  {value:"place9",    label:"9th Place"},
+];
+const RANK_SORT={champion:1,runner1:2,runner2:3,place4:4,place5:5,place6:6,place7:7,place8:8,place9:9};
+const RANK_MEDAL={champion:"🥇",runner1:"🥈",runner2:"🥉"};
+const RANK_DISPLAY={champion:"Champion",runner1:"Runner-up 1",runner2:"Runner-up 2",place4:"4th Place",place5:"5th Place",place6:"6th Place",place7:"7th Place",place8:"8th Place",place9:"9th Place"};
+
+function fmtPrize(v){
+  if(!v&&v!==0)return"";
+  const n=Number(String(v).replace(/[^0-9.]/g,""));
+  if(isNaN(n))return String(v);
+  return"$"+n.toLocaleString("en-US");
+}
+
+function FinalTab({finalRound,setFinalRound,guests}){
+  // entries: [{id, memberId, name(auto), rank, prize}]
+  const entries=finalRound.entries||[];
+  const [newMbId,setNewMbId]=useState("");
+  const [newRank,setNewRank]=useState("champion");
+  const [newPrize,setNewPrize]=useState("");
+  const [addErr,setAddErr]=useState("");
+
+  // auto-fill name from guests list or directory
+  function resolveName(mbId){
+    const g=guests.find(x=>x.memberId===mbId.trim()&&x.status==="normal");
+    return g?g.name:"";
+  }
+
+  function toggleEnabled(){setFinalRound(f=>({...f,enabled:!f.enabled}));}
+
+  function addEntry(){
+    const mbId=newMbId.trim();
+    if(!mbId)return setAddErr("Enter a Member ID.");
+    if(entries.some(e=>e.rank===newRank))return setAddErr(`${RANK_DISPLAY[newRank]} already assigned.`);
+    const name=resolveName(mbId);
+    const entry={id:uid(),memberId:mbId,name,rank:newRank,prize:newPrize.trim()};
+    setFinalRound(f=>({...f,entries:[...(f.entries||[]),entry]}));
+    setNewMbId("");setNewPrize("");setAddErr("");
+  }
+
+  function updEntry(id,patch){
+    setFinalRound(f=>({...f,entries:(f.entries||[]).map(e=>e.id===id?{...e,...patch}:e)}));
+  }
+
+  function delEntry(id){
+    setFinalRound(f=>({...f,entries:(f.entries||[]).filter(e=>e.id!==id)}));
+  }
+
+  const sorted=[...entries].sort((a,b)=>(RANK_SORT[a.rank]||99)-(RANK_SORT[b.rank]||99));
+  const usedRanks=new Set(entries.map(e=>e.rank));
+  const availableRanks=RANK_OPTIONS.filter(o=>!usedRanks.has(o.value)||o.value===newRank);
+
+  return(
+    <div className="stack">
+      <div className="panel">
+        <div className="panel-hdr">
+          <h2><ITrophy s={15}/> Final Round</h2>
+          <label className="toggle">
+            <input type="checkbox" checked={!!finalRound.enabled} onChange={toggleEnabled}/>
+            <span className="toggle-slider"/>
+            <span className="toggle-lbl">{finalRound.enabled?"Active":"Disabled"}</span>
+          </label>
+        </div>
+
+        {!finalRound.enabled&&<p className="hint">Enable Final Round to record rankings and prize winners.</p>}
+
+        {finalRound.enabled&&<>
+          {/* Add entry form */}
+          <div className="panel-section">
+            <div className="section-hdr"><span>Add result</span></div>
+            {addErr&&<div className="ferr ferr-sm"><IAlert s={13}/>{addErr}</div>}
+            <div className="final-form">
+              <div className="final-field">
+                <label>Member ID</label>
+                <input className="input" placeholder="MB001" value={newMbId}
+                  onChange={e=>{setNewMbId(e.target.value);setAddErr("");}}
+                  onBlur={e=>{
+                    const name=resolveName(e.target.value);
+                    if(name)setAddErr("");
+                  }}
+                />
+                {newMbId&&resolveName(newMbId)&&(
+                  <div className="autofill-name">{resolveName(newMbId)}</div>
+                )}
+              </div>
+              <div className="final-field">
+                <label>Rank</label>
+                <select className="input" value={newRank} onChange={e=>setNewRank(e.target.value)}>
+                  {RANK_OPTIONS.map(o=>(
+                    <option key={o.value} value={o.value} disabled={usedRanks.has(o.value)}>
+                      {o.label}{usedRanks.has(o.value)?" (taken)":""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="final-field">
+                <label>Prize (USD)</label>
+                <div className="fee-wrap">
+                  <span className="fee-pre">$</span>
+                  <input className="input fee-inp" placeholder="10,000" value={newPrize}
+                    onChange={e=>setNewPrize(e.target.value)}/>
+                </div>
+              </div>
+              <button className="btn btn-pri btn-xs final-add-btn" onClick={addEntry}>
+                <IPlus s={13}/> Add
+              </button>
+            </div>
+          </div>
+
+          {/* Results board */}
+          <div className="panel-section">
+            <div className="section-hdr"><span>Results board</span></div>
+            {sorted.length===0&&<p className="hint">No results yet. Add winners above.</p>}
+            {sorted.map(e=>(
+              <div className="final-result-row" key={e.id}>
+                {/* Rank medal + label */}
+                <div className="frr-rank">
+                  <span className="frr-medal">{RANK_MEDAL[e.rank]||<span className="frr-num">#{RANK_SORT[e.rank]}</span>}</span>
+                  <span className="frr-rank-lbl">{RANK_DISPLAY[e.rank]}</span>
+                </div>
+
+                {/* MB# */}
+                <div className="frr-id">
+                  <label>MB#</label>
+                  <input className="input frr-input" value={e.memberId}
+                    onChange={ev=>updEntry(e.id,{memberId:ev.target.value,name:resolveName(ev.target.value)||e.name})}/>
+                </div>
+
+                {/* Name (auto or manual) */}
+                <div className="frr-name">
+                  <label>Name</label>
+                  <input className="input frr-input" value={e.name}
+                    onChange={ev=>updEntry(e.id,{name:ev.target.value})}
+                    placeholder="Auto-filled"/>
+                </div>
+
+                {/* Prize */}
+                <div className="frr-prize">
+                  <label>Prize</label>
+                  <div className="fee-wrap">
+                    <span className="fee-pre">$</span>
+                    <input className="input fee-inp" value={e.prize}
+                      onChange={ev=>updEntry(e.id,{prize:ev.target.value})}
+                      placeholder="10,000"/>
+                  </div>
+                </div>
+
+                <button className="ib ib-d" onClick={()=>delEntry(e.id)}><ITrash s={13}/></button>
+              </div>
+            ))}
+          </div>
+
+          {/* Display card — final summary */}
+          {sorted.length>0&&(
+            <div className="panel-section">
+              <div className="section-hdr"><span>Prize presentation</span></div>
+              <div className="prize-card">
+                <div className="prize-card-title">{finalRound.name||"Final Results"}</div>
+                {sorted.map(e=>(
+                  <div className="prize-card-row" key={e.id}>
+                    <div className="pcr-left">
+                      <span className="pcr-medal">{RANK_MEDAL[e.rank]||""}</span>
+                      <div className="pcr-info">
+                        <span className="pcr-mb">{e.memberId}</span>
+                        <span className="pcr-name">{e.name||"—"}</span>
+                        <span className="pcr-rank-lbl">{RANK_DISPLAY[e.rank]}</span>
+                      </div>
+                    </div>
+                    {e.prize&&<div className="pcr-prize">{fmtPrize(e.prize)}</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>}
+      </div>
+    </div>
+  );
+}
+
 /* ── Settings Tab ── */
-const DIR_PAGE=50;
-function SettingsTab({rounds,feeAmount,setFeeAmount,updRoundName,updRoundLimit,addRound,removeRound,roundCounts,dirRef,dirVer,bumpDir}){
+const DPAGE=50;
+function SettingsTab({rounds,setRounds,feeAmt,setFeeAmt,eventName,setEventName,sheetUrl,setSheetUrl,roundCounts,dirRef,dirVer,setDirVer}){
   const [df,setDf]=useState({id:"",name:"",tier:""});
   const [dfErr,setDfErr]=useState("");
-  const [bulkTxt,setBulkTxt]=useState("");
-  const [dirSearch,setDirSearch]=useState("");
-  const [dirPage,setDirPage]=useState(0);
-  const debouncedDirSearch=useRef(debounce(v=>{setDirSearch(v);setDirPage(0);},250));
+  const [bulk,setBulk]=useState("");
+  const [dsearch,setDsearch]=useState("");
+  const [dpage,setDpage]=useState(0);
+  const dbSearch=useRef(debounce(v=>{setDsearch(v);setDpage(0);},250));
 
   const dir=dirRef.current;
-  const dirFiltered=useMemo(()=>{
-    const q=dirSearch.trim().toLowerCase();
+  const dirFilt=useMemo(()=>{
+    const q=dsearch.trim().toLowerCase();
     if(!q)return dir;
     return dir.filter(d=>d.id.toLowerCase().includes(q)||d.name.toLowerCase().includes(q)||(d.tier||"").toLowerCase().includes(q));
-  },[dirVer,dirSearch]);
-
-  const dirPage_items=useMemo(()=>dirFiltered.slice(dirPage*DIR_PAGE,(dirPage+1)*DIR_PAGE),[dirFiltered,dirPage]);
-  const dirTotalPages=Math.ceil(dirFiltered.length/DIR_PAGE);
+  },[dirVer,dsearch]);
+  const dItems=useMemo(()=>dirFilt.slice(dpage*DPAGE,(dpage+1)*DPAGE),[dirFilt,dpage]);
+  const dPages=Math.ceil(dirFilt.length/DPAGE);
 
   function addEntry(){
     const id=df.id.trim(),name=df.name.trim();
-    if(!id||!name)return setDfErr("Enter both ID and name.");
-    if(dir.some(d=>d.id===id))return setDfErr(`ID "${id}" already exists.`);
+    if(!id||!name)return setDfErr("Enter ID and name.");
+    if(dir.some(d=>d.id===id))return setDfErr(`"${id}" already exists.`);
     dirRef.current=[...dir,{id,name,tier:df.tier.trim()}];
-    saveDir(dirRef.current);bumpDir();
+    lsSet(LS.DIR,dirRef.current);setDirVer(v=>v+1);
     setDf({id:"",name:"",tier:""});setDfErr("");
   }
-
-  function removeEntry(id){
-    dirRef.current=dir.filter(d=>d.id!==id);
-    saveDir(dirRef.current);bumpDir();
-  }
-
+  function delEntry(id){dirRef.current=dir.filter(d=>d.id!==id);lsSet(LS.DIR,dirRef.current);setDirVer(v=>v+1);}
   function importBulk(){
-    const existing=new Set(dir.map(d=>d.id));
-    const adds=[];
-    bulkTxt.split("\n").forEach(line=>{
-      // format: ID, Name, Tier (tier optional)
-      const parts=line.split(",");
-      const id=(parts[0]||"").trim();
-      const name=(parts[1]||"").trim();
-      const tier=(parts[2]||"").trim();
-      if(!id||!name||existing.has(id))return;
-      existing.add(id);adds.push({id,name,tier});
+    const ex=new Set(dir.map(d=>d.id));const adds=[];
+    bulk.split("\n").forEach(line=>{
+      const p=line.split(",");
+      const id=(p[0]||"").trim(),name=(p[1]||"").trim(),tier=(p[2]||"").trim();
+      if(!id||!name||ex.has(id))return;ex.add(id);adds.push({id,name,tier});
     });
-    if(adds.length){dirRef.current=[...dir,...adds];saveDir(dirRef.current);bumpDir();setBulkTxt("");}
+    if(adds.length){dirRef.current=[...dir,...adds];lsSet(LS.DIR,dirRef.current);setDirVer(v=>v+1);setBulk("");}
   }
-
+  function addRound(){setRounds(p=>[...p,{id:"r_"+Date.now().toString(36).slice(-5),name:`Round ${p.length+1}`,limit:20}]);}
+  function updRName(id,v){setRounds(p=>p.map(r=>r.id===id?{...r,name:v}:r));}
+  function updRLim(id,v){setRounds(p=>p.map(r=>r.id===id?{...r,limit:Math.max(0,v)}:r));}
+  function delRound(id){
+    if(guests&&guests.some(g=>g.round===id&&g.status==="normal"))return alert("Round has guests. Move them first.");
+    setRounds(p=>p.filter(r=>r.id!==id));
+  }
   function clearAll(){
-    if(confirm("⚠️ Delete ALL data (guests, rounds, directory)? This cannot be undone.")){
-      [LS_GUESTS,LS_ROUNDS,LS_FEE,LS_DIR].forEach(k=>localStorage.removeItem(k));
-      window.location.reload();
-    }
+    if(confirm("Delete ALL data permanently?")){{Object.values(LS).forEach(k=>localStorage.removeItem(k));window.location.reload();}}
   }
 
   return(
     <div className="stack">
-      {/* Fee */}
+      {/* Event info */}
       <div className="panel">
-        <div className="panel-header"><h2>Registration fee</h2></div>
+        <div className="panel-hdr"><h2>Event</h2></div>
         <div className="settings-row">
-          <label>Fee per entry (USD $)</label>
-          <div className="fee-input-wrap">
-            <span className="fee-prefix">$</span>
-            <input type="number" className="input fee-input" value={feeAmount} min={0} step={1}
-              onChange={e=>setFeeAmount(Number(e.target.value)||0)}/>
+          <label>Event name</label>
+          <input className="input" value={eventName} onChange={e=>setEventName(e.target.value)} placeholder="e.g. Poker Night June 2025" style={{maxWidth:260}}/>
+        </div>
+        <p className="hint">Shown in the header and used as the CSV filename.</p>
+      </div>
+
+      {/* Sync */}
+      <div className="panel">
+        <div className="panel-hdr"><h2><ICloud s={14}/> Google Sheets sync</h2></div>
+        <p className="hint">Paste your Apps Script Web App URL below to sync data across devices. <a href="#sheet-guide" style={{color:"var(--accent)"}}>Setup guide ↓</a></p>
+        <div className="settings-row">
+          <label>Web App URL</label>
+          <input className="input" value={sheetUrl} onChange={e=>setSheetUrl(e.target.value.trim())}
+            placeholder="https://script.google.com/macros/s/…/exec" style={{maxWidth:400,fontSize:11}}/>
+        </div>
+        <div className="sheet-guide" id="sheet-guide">
+          <div className="guide-title">📋 Setup guide (one-time, ~10 min)</div>
+          <ol className="guide-steps">
+            <li>Open <a href="https://sheets.google.com" target="_blank">Google Sheets</a>, create a new sheet named <code>EventData</code>.</li>
+            <li>Go to <strong>Extensions → Apps Script</strong>.</li>
+            <li>Replace all code with the script below, click <strong>Save</strong>.</li>
+            <li>Click <strong>Deploy → New deployment → Web app</strong>. Set <em>Execute as: Me</em>, <em>Who has access: Anyone</em>. Click Deploy.</li>
+            <li>Copy the Web App URL and paste it above.</li>
+            <li>Click the ↑ push button in the header to save your data to the Sheet.</li>
+          </ol>
+          <div className="code-block">
+            <pre>{`function doPost(e) {
+  const data = JSON.parse(e.postData.contents);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet()
+    .getSheetByName('EventData') || SpreadsheetApp.getActiveSpreadsheet().insertSheet('EventData');
+  
+  if (data.action === 'write') {
+    sheet.clearContents();
+    sheet.getRange(1,1).setValue(JSON.stringify(data));
+    return ContentService.createTextOutput(JSON.stringify({ok:true}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  if (data.action === 'read') {
+    const val = sheet.getRange(1,1).getValue();
+    if (!val) return ContentService.createTextOutput(JSON.stringify({ok:false,error:'No data'}))
+      .setMimeType(ContentService.MimeType.JSON);
+    const saved = JSON.parse(val);
+    return ContentService.createTextOutput(JSON.stringify({ok:true,...saved}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}`}</pre>
           </div>
         </div>
-        <p className="hint">Total collected = Paid entries × fee.</p>
+      </div>
+
+      {/* Fee */}
+      <div className="panel">
+        <div className="panel-hdr"><h2>Registration fee</h2></div>
+        <div className="settings-row">
+          <label>Fee per entry (USD)</label>
+          <div className="fee-wrap">
+            <span className="fee-pre">$</span>
+            <input type="number" className="input fee-inp" value={feeAmt} min={0} step={1} onChange={e=>setFeeAmt(Number(e.target.value)||0)}/>
+          </div>
+        </div>
+        <p className="hint">Total collected = Paid entries × this fee.</p>
       </div>
 
       {/* Rounds */}
       <div className="panel">
-        <div className="panel-header"><h2>Rounds &amp; limits</h2><button className="btn btn-secondary btn-sm" onClick={addRound}><Plus size={14}/> Add</button></div>
-        <div className="round-list">
+        <div className="panel-hdr"><h2>Rounds</h2><button className="btn btn-sec btn-xs" onClick={addRound}><IPlus s={13}/> Add</button></div>
+        <div className="rlist">
           {rounds.map(r=>(
-            <div className="round-row" key={r.id}>
-              <input className="input rname" value={r.name} onChange={e=>updRoundName(r.id,e.target.value)}/>
-              <div className="rlimit">
-                <label>Limit</label>
-                <input type="number" className="input rlimit-input" value={r.limit} min={0} onChange={e=>updRoundLimit(r.id,Number(e.target.value)||0)}/>
-              </div>
-              <div className="rocc">{roundCounts[r.id]||0}/{r.limit}</div>
-              <button className="ibtn ibtn-d" onClick={()=>removeRound(r.id)}><Trash size={13}/></button>
+            <div className="rrow" key={r.id}>
+              <input className="input rname" value={r.name} onChange={e=>updRName(r.id,e.target.value)}/>
+              <div className="rlim"><label>Limit</label><input type="number" className="input rlim-inp" value={r.limit} min={0} onChange={e=>updRLim(r.id,Number(e.target.value)||0)}/></div>
+              <div className="rocc dim">{roundCounts[r.id]||0}/{r.limit}</div>
+              <button className="ib ib-d" onClick={()=>delRound(r.id)}><ITrash s={13}/></button>
             </div>
           ))}
-          {!rounds.length&&<div className="empty">No rounds yet.</div>}
+          {!rounds.length&&<div className="empty">No rounds.</div>}
         </div>
       </div>
 
       {/* Directory */}
       <div className="panel">
-        <div className="panel-header">
-          <h2>Member directory <span className="muted-sm">({dir.length} entries)</span></h2>
-        </div>
-        <p className="hint">ID → Name + Tier lookup. Used to auto-fill when adding guests.</p>
-
-        {/* Single add */}
-        <div className="dir-add-row">
-          {dfErr&&<div className="form-error form-err-inline"><Alert size={13}/> {dfErr}</div>}
+        <div className="panel-hdr"><h2>Member directory <span className="dim">({dir.length})</span></h2></div>
+        <p className="hint">ID → Name + Tier. Auto-fills when adding guests by ID.</p>
+        <div className="dir-add">
+          {dfErr&&<div className="ferr ferr-sm"><IAlert s={13}/>{dfErr}</div>}
           <div className="dir-fields">
-            <input className="input" placeholder="Member ID" value={df.id} onChange={e=>setDf({...df,id:e.target.value})}/>
-            <input className="input" placeholder="Full name"  value={df.name} onChange={e=>setDf({...df,name:e.target.value})}/>
-            <input className="input" placeholder="Tier (opt)" value={df.tier} onChange={e=>setDf({...df,tier:e.target.value})}/>
-            <button className="btn btn-secondary btn-sm" onClick={addEntry}><Plus size={14}/> Add</button>
+            <input className="input" placeholder="ID" value={df.id} onChange={e=>setDf({...df,id:e.target.value})}/>
+            <input className="input" placeholder="Name" value={df.name} onChange={e=>setDf({...df,name:e.target.value})}/>
+            <input className="input" placeholder="Tier" value={df.tier} onChange={e=>setDf({...df,tier:e.target.value})}/>
+            <button className="btn btn-sec btn-xs" onClick={addEntry}><IPlus s={13}/></button>
           </div>
         </div>
-
-        {/* Bulk import */}
         <div className="dir-bulk">
-          <label className="bulk-lbl">Bulk import — one per line: <code>ID, Name, Tier</code> (Tier optional)</label>
-          <textarea className="input" rows={4} value={bulkTxt}
-            placeholder={"MB001, Nguyen Van A, Gold\nMB002, Tran Thi B, Silver\nMB003, Le Van C"}
-            onChange={e=>setBulkTxt(e.target.value)}/>
-          <button className="btn btn-secondary btn-sm dir-bulk-btn" onClick={importBulk} disabled={!bulkTxt.trim()}>
-            <BulkIcon size={14}/> Import
-          </button>
+          <div className="bulk-lbl">Bulk import — <code>ID, Name, Tier</code> per line (Tier optional)</div>
+          <textarea className="input" rows={3} value={bulk} onChange={e=>setBulk(e.target.value)}
+            placeholder={"MB001, Nguyen Van A, Gold\nMB002, Tran Thi B"}/>
+          <button className="btn btn-sec btn-xs" style={{alignSelf:"flex-start"}} onClick={importBulk} disabled={!bulk.trim()}><IBulk s={13}/> Import</button>
         </div>
-
-        {/* Search + paginated list */}
-        <div className="dir-search-row">
-          <div className="search-box">
-            <Search size={13}/>
-            <input placeholder="Search directory…" onChange={e=>debouncedDirSearch.current(e.target.value)}/>
-          </div>
-          <span className="muted-sm">{dirFiltered.length} result(s)</span>
+        <div className="dir-search">
+          <div className="sbox"><ISearch s={13}/><input placeholder="Search directory…" onChange={e=>dbSearch.current(e.target.value)}/></div>
+          <span className="dim">{dirFilt.length} result(s)</span>
         </div>
-
-        <div className="table-wrap">
-          {dirPage_items.length===0?<div className="empty">No entries.</div>:(
-            <table className="table">
-              <thead><tr><th>ID</th><th>Name</th><th>Tier</th><th></th></tr></thead>
-              <tbody>
-                {dirPage_items.map(d=>(
-                  <tr key={d.id}>
-                    <td className="mono">{d.id}</td>
-                    <td className="name-cell">{d.name}</td>
-                    <td><span className="tier-badge">{d.tier||<span className="muted">—</span>}</span></td>
-                    <td className="act-cell">
-                      <button className="ibtn ibtn-d" onClick={()=>removeEntry(d.id)}><Trash size={13}/></button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+        <div className="tw">
+          {dItems.length===0?<div className="empty">No entries.</div>:(
+            <table className="tbl">
+              <thead><tr><th>ID</th><th>Name</th><th>Tier</th><th/></tr></thead>
+              <tbody>{dItems.map(d=>(
+                <tr key={d.id}>
+                  <td className="mono">{d.id}</td><td className="namec">{d.name}</td>
+                  <td>{d.tier?<span className="tbadge">{d.tier}</span>:<span className="dim">—</span>}</td>
+                  <td className="actc"><button className="ib ib-d" onClick={()=>delEntry(d.id)}><ITrash s={13}/></button></td>
+                </tr>
+              ))}</tbody>
             </table>
           )}
         </div>
-
-        {dirTotalPages>1&&(
-          <div className="pagination">
-            <button className="btn btn-ghost btn-sm" disabled={dirPage===0} onClick={()=>setDirPage(p=>p-1)}>← Prev</button>
-            <span className="muted-sm">Page {dirPage+1} / {dirTotalPages}</span>
-            <button className="btn btn-ghost btn-sm" disabled={dirPage>=dirTotalPages-1} onClick={()=>setDirPage(p=>p+1)}>Next →</button>
-          </div>
-        )}
+        {dPages>1&&<div className="pagination">
+          <button className="btn btn-ghost btn-xs" disabled={dpage===0} onClick={()=>setDpage(p=>p-1)}>← Prev</button>
+          <span className="dim">{dpage+1}/{dPages}</span>
+          <button className="btn btn-ghost btn-xs" disabled={dpage>=dPages-1} onClick={()=>setDpage(p=>p+1)}>Next →</button>
+        </div>}
       </div>
 
       {/* Danger */}
       <div className="panel panel-danger">
-        <div className="panel-header"><h2 style={{color:"var(--danger)"}}>Danger zone</h2></div>
+        <div className="panel-hdr"><h2 style={{color:"var(--danger)"}}>Danger zone</h2></div>
         <div className="settings-row">
-          <div>
-            <div style={{fontWeight:600,fontSize:13}}>Clear all data</div>
-            <div style={{fontSize:12,color:"var(--ink-soft)"}}>Permanently delete all guests, rounds, and directory.</div>
-          </div>
-          <button className="btn btn-sm" style={{background:"var(--danger)",color:"#fff"}} onClick={clearAll}>Clear all</button>
+          <div><div style={{fontWeight:600,fontSize:13}}>Clear all data</div><div className="dim" style={{fontSize:12}}>Permanently delete everything.</div></div>
+          <button className="btn btn-xs" style={{background:"var(--danger)",color:"#fff"}} onClick={clearAll}>Clear all</button>
         </div>
       </div>
     </div>
   );
 }
 
-/* ── Guest Form Modal ── */
-function GuestFormModal({form,setForm,rounds,error,isEdit,onClose,onSave,onIdChange}){
+/* ── Guest Modal ── */
+function GuestModal({form,setForm,rounds,err,isEdit,onClose,onSave,onIdChange}){
   return(
-    <div className="overlay" onClick={onClose}>
-      <div className="modal" onClick={e=>e.stopPropagation()}>
+    <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="modal">
         <div className="modal-hdr">
           <h3>{isEdit?"Edit entry":"Add guest"}</h3>
-          <button className="ibtn" onClick={onClose}><X size={17}/></button>
+          <button className="ib" onClick={onClose}><IX s={16}/></button>
         </div>
         <div className="modal-body">
-          {error&&<div className="form-error"><Alert size={14}/> {error}</div>}
-          <div className="form-grid">
-            <div className="field">
-              <label>Member ID *</label>
-              <input className="input" value={form.memberId} disabled={isEdit}
-                onChange={e=>onIdChange(e.target.value)} placeholder="e.g. MB001"/>
+          {err&&<div className="ferr"><IAlert s={13}/>{err}</div>}
+          <div className="fgrid">
+            <div className="field"><label>Member ID *</label>
+              <input className="input" value={form.memberId} disabled={isEdit} onChange={e=>onIdChange(e.target.value)} placeholder="MB001"/>
             </div>
-            <div className="field">
-              <label>Name *</label>
-              <input className="input" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Auto-filled from directory"/>
+            <div className="field"><label>Name *</label>
+              <input className="input" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Auto-filled"/>
             </div>
-            <div className="field">
-              <label>Tier</label>
-              <input className="input" value={form.tier} onChange={e=>setForm({...form,tier:e.target.value})} placeholder="Auto-filled from directory"/>
+            <div className="field"><label>Tier</label>
+              <input className="input" value={form.tier} onChange={e=>setForm({...form,tier:e.target.value})} placeholder="Auto-filled"/>
             </div>
-            <div className="field">
-              <label>Fee status</label>
+            <div className="field"><label>Fee</label>
               <select className="input" value={form.feeStatus} onChange={e=>setForm({...form,feeStatus:e.target.value})}>
-                <option value="paid">Paid</option><option value="free">Free</option><option value="unpaid">Unpaid</option>
+                <option value="paid">✓ Paid</option><option value="free">◎ Free</option><option value="unpaid">✗ Unpaid</option>
               </select>
             </div>
-            <div className="field">
-              <label>Status</label>
+            <div className="field"><label>Status</label>
               <select className="input" value={form.status} onChange={e=>setForm({...form,status:e.target.value})}>
                 <option value="normal">Normal</option><option value="cancel">Cancelled</option><option value="waiting">Waiting</option>
               </select>
             </div>
-            <div className="field">
-              <label>Round</label>
+            <div className="field"><label>Round</label>
               <select className="input" value={form.round} disabled={form.status!=="normal"} onChange={e=>setForm({...form,round:e.target.value})}>
                 <option value="">— Unassigned —</option>
                 {rounds.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
               </select>
             </div>
-            <div className="field field-full">
-              <label>Note</label>
-              <textarea className="input" rows={2} value={form.note} onChange={e=>setForm({...form,note:e.target.value})} placeholder="Rejoin reason, special request…"/>
+            <div className="field field-full"><label>Note</label>
+              <textarea className="input" rows={2} value={form.note} onChange={e=>setForm({...form,note:e.target.value})} placeholder="Re-join reason, note…"/>
             </div>
           </div>
-          {isEdit&&<p className="hint" style={{padding:"8px 0 0"}}>💡 Same member can have multiple entries (re-joins). Each entry gets its own row.</p>}
         </div>
         <div className="modal-ftr">
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary btn-sm" onClick={onSave}><Floppy size={14}/> {isEdit?"Save":"Add guest"}</button>
+          <button className="btn btn-ghost btn-xs" onClick={onClose}>Cancel</button>
+          <button className="btn btn-pri btn-xs" onClick={onSave}><ISave s={13}/>{isEdit?"Save":"Add guest"}</button>
         </div>
       </div>
     </div>
   );
 }
 
-/* ── Bulk Add Modal ── */
+/* ── Bulk Modal ── */
 function BulkModal({onClose,onSubmit,dirMap}){
   const [text,setText]=useState("");
   const lines=text.split(/[\n,]/).map(l=>l.trim()).filter(Boolean);
-  const preview=lines.slice(0,6);
+  const prev=lines.slice(0,6);
   return(
-    <div className="overlay" onClick={onClose}>
-      <div className="modal" onClick={e=>e.stopPropagation()}>
-        <div className="modal-hdr"><h3>Bulk add guests</h3><button className="ibtn" onClick={onClose}><X size={17}/></button></div>
+    <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="modal">
+        <div className="modal-hdr"><h3>Bulk add</h3><button className="ib" onClick={onClose}><IX s={16}/></button></div>
         <div className="modal-body">
-          <div className="field">
-            <label>Paste Member IDs — one per line or comma-separated</label>
+          <div className="field"><label>Paste IDs — one per line or comma-separated</label>
             <textarea className="input" rows={6} autoFocus value={text} onChange={e=>setText(e.target.value)} placeholder={"MB001\nMB002\nMB003"}/>
           </div>
-          <p className="hint">{lines.length} ID(s). Names/Tiers auto-filled from directory. Same ID can be added multiple times (re-join). All start as <strong>Normal / Unpaid / Unassigned</strong>.</p>
-          {preview.length>0&&(
-            <div className="bulk-preview">
-              {preview.map((id,i)=>(
-                <div className="bulk-row" key={i}>
-                  <span className="mono">{id}</span>
-                  <span className={cx("bname",!dirMap[id]&&"muted")}>{dirMap[id]?.name||"Not in directory"}</span>
-                  <span className="tier-badge">{dirMap[id]?.tier||""}</span>
-                </div>
-              ))}
-              {lines.length>6&&<div className="bulk-more">+{lines.length-6} more</div>}
-            </div>
-          )}
+          <p className="hint">{lines.length} ID(s). Names/Tiers auto-filled. Same ID can appear multiple times (re-join). All start Normal/Unpaid/Unassigned.</p>
+          {prev.length>0&&<div className="bprev">
+            {prev.map((id,i)=>(
+              <div className="brow" key={i}>
+                <span className="mono">{id}</span>
+                <span className={dirMap[id]?"":"dim"}>{dirMap[id]?.name||"Not in directory"}</span>
+                {dirMap[id]?.tier&&<span className="tbadge">{dirMap[id].tier}</span>}
+              </div>
+            ))}
+            {lines.length>6&&<div className="dim" style={{textAlign:"center",fontSize:11}}>+{lines.length-6} more</div>}
+          </div>}
         </div>
         <div className="modal-ftr">
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary btn-sm" disabled={!lines.length} onClick={()=>onSubmit(lines)}>
-            <BulkIcon size={14}/> Add {lines.length||""} entries
-          </button>
+          <button className="btn btn-ghost btn-xs" onClick={onClose}>Cancel</button>
+          <button className="btn btn-pri btn-xs" disabled={!lines.length} onClick={()=>onSubmit(lines)}><IBulk s={13}/>Add {lines.length||""}</button>
         </div>
       </div>
     </div>
   );
 }
 
-/* ══════════════ CSS ══════════════ */
+/* ══ CSS ══ */
 const CSS=`
 :root{
-  --ink:#1c1b1a;--ink-soft:#5c5853;
-  --paper:#faf8f4;--paper-raised:#fff;
-  --line:#e6e1d8;
-  --accent:#b55327;--accent-soft:#f4e4d8;
-  --good:#2f6b4f;--good-soft:#e3efe7;
-  --warn:#9a6a1a;--warn-soft:#faf0db;
-  --danger:#a13b34;--danger-soft:#f6e3e0;
-  --neutral:#5c5853;--neutral-soft:#ece9e3;
-  --rad:10px;
-  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --ink:#1a1918;--ink-s:#58534e;
+  --paper:#f7f6f3;--card:#fff;
+  --line:#e4dfd7;
+  --acc:#b55327;--acc-s:#f3e1d4;
+  --good:#2d6949;--good-s:#dff0e8;
+  --warn:#936418;--warn-s:#faefd6;
+  --danger:#9e3830;--danger-s:#f5e0de;
+  --neutral:#58534e;--neu-s:#eae7e2;
+  --r:10px;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,sans-serif;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 .app{background:var(--paper);color:var(--ink);min-height:100vh;font-size:14px;line-height:1.5;}
 
-/* topbar */
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--paper-raised);gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:10;}
-.brand{display:flex;align-items:center;gap:10px;}
-.brand-mark{width:32px;height:32px;border-radius:7px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:700;font-size:16px;flex-shrink:0;}
-.brand-title{font-weight:700;font-size:14px;letter-spacing:-.01em;}
-.brand-sub{font-size:11.5px;color:var(--ink-soft);display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
-.save-dot{font-size:10.5px;color:var(--good);background:var(--good-soft);padding:1px 6px;border-radius:999px;font-weight:600;}
-.topbar-actions{display:flex;gap:6px;}
+/* ── topbar ── */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line);background:var(--card);gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:20;}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;}
+.bmark{width:30px;height:30px;border-radius:7px;background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:700;font-size:15px;flex-shrink:0;}
+.btitle{font-weight:700;font-size:13.5px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;}
+.bsub{font-size:11px;color:var(--ink-s);display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+.smsg{font-size:10.5px;padding:1px 7px;border-radius:999px;font-weight:600;}
+.smsg-ok{background:var(--good-s);color:var(--good);}
+.smsg-err{background:var(--danger-s);color:var(--danger);}
+.smsg-info{background:var(--neu-s);color:var(--neutral);}
+.hactions{display:flex;gap:5px;flex-shrink:0;}
 
-/* tabs */
-.tabs{display:flex;background:var(--paper-raised);border-bottom:1px solid var(--line);padding:0 8px;position:sticky;top:61px;z-index:9;}
-.tab{display:flex;align-items:center;gap:5px;background:none;border:none;padding:10px 12px;font-size:13px;font-weight:600;color:var(--ink-soft);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;white-space:nowrap;}
+/* ── tabs ── */
+.tabs{display:flex;background:var(--card);border-bottom:1px solid var(--line);overflow-x:auto;position:sticky;top:57px;z-index:19;}
+.tab{display:flex;align-items:center;gap:4px;background:none;border:none;padding:10px 13px;font-size:12.5px;font-weight:600;color:var(--ink-s);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-family:inherit;}
 .tab:hover{color:var(--ink);}
-.tab-active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-on{color:var(--acc);border-bottom-color:var(--acc);}
 
-/* content */
-.content{padding:16px;max-width:900px;margin:0 auto;}
-.stack{display:flex;flex-direction:column;gap:14px;}
+/* ── content ── */
+.content{padding:14px;max-width:900px;margin:0 auto;}
+.stack{display:flex;flex-direction:column;gap:12px;}
 
-/* stat grid */
-.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
-@media(max-width:600px){.stat-grid{grid-template-columns:repeat(2,1fr);}}
-.stat-card{background:var(--paper-raised);border:1px solid var(--line);border-radius:var(--rad);padding:12px 14px;}
-.stat-icon{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:6px;background:var(--neutral-soft);color:var(--ink-soft);}
-.tone-good .stat-icon{background:var(--good-soft);color:var(--good);}
-.tone-warn .stat-icon{background:var(--warn-soft);color:var(--warn);}
-.tone-danger .stat-icon{background:var(--danger-soft);color:var(--danger);}
-.tone-neutral .stat-icon{background:var(--neutral-soft);color:var(--neutral);}
-.stat-value{font-size:18px;font-weight:700;letter-spacing:-.01em;}
-.stat-label{font-size:11px;color:var(--ink-soft);margin-top:1px;}
-.stat-sub{font-size:10.5px;color:var(--ink-soft);margin-top:3px;}
+/* ── stat grid ── */
+.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+@media(max-width:560px){.sgrid{grid-template-columns:repeat(2,1fr);}}
+.sc{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:11px 13px;}
+.sc-icon{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:5px;background:var(--neu-s);color:var(--ink-s);}
+.sc-good .sc-icon{background:var(--good-s);color:var(--good);}
+.sc-warn .sc-icon{background:var(--warn-s);color:var(--warn);}
+.sc-danger .sc-icon{background:var(--danger-s);color:var(--danger);}
+.sc-neutral .sc-icon{background:var(--neu-s);color:var(--neutral);}
+.sc-val{font-size:17px;font-weight:700;letter-spacing:-.01em;}
+.sc-lbl{font-size:10.5px;color:var(--ink-s);margin-top:1px;}
+.sc-sub{font-size:10px;color:var(--ink-s);margin-top:2px;}
 
-/* panel */
-.panel{background:var(--paper-raised);border:1px solid var(--line);border-radius:var(--rad);overflow:visible;}
-.panel-danger{border-color:#f0d0ce;}
-.panel-header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line);gap:10px;flex-wrap:wrap;}
-.panel-header h2{font-size:13.5px;font-weight:700;margin:0;display:flex;align-items:center;gap:6px;}
-.muted-sm{font-size:11.5px;color:var(--ink-soft);font-weight:500;}
+/* ── panel ── */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:visible;}
+.panel-danger{border-color:#f0cfcc;}
+.panel-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;border-bottom:1px solid var(--line);gap:8px;flex-wrap:wrap;}
+.panel-hdr h2{font-size:13px;font-weight:700;margin:0;display:flex;align-items:center;gap:6px;}
+.panel-section{border-top:1px solid var(--line);padding:12px 13px;}
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-size:12px;font-weight:700;color:var(--ink-s);}
 
-/* search */
-.search-box{display:flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--ink-soft);flex:1;min-width:0;}
-.search-box input{border:none;background:none;outline:none;font-size:13px;color:var(--ink);flex:1;min-width:0;}
-.search-wide{padding:10px 14px;font-size:13.5px;}
-.search-clear{background:none;border:none;cursor:pointer;color:var(--ink-soft);display:flex;padding:0;}
+/* ── filter tabs ── */
+.ftabs{display:flex;gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch;flex:1;min-width:0;}
+.ftab{background:none;border:none;padding:8px 10px;font-size:11.5px;font-weight:600;color:var(--ink-s);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;font-family:inherit;}
+.ftab:hover{color:var(--ink);}
+.ftab-on{color:var(--acc);border-bottom-color:var(--acc);}
+.ftab-cnt{background:var(--neu-s);color:var(--ink-s);font-size:10px;padding:0 5px;border-radius:999px;margin-left:3px;}
 
-/* table */
-.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-.table{width:100%;border-collapse:collapse;font-size:13px;}
-.table th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);padding:9px 12px;border-bottom:1px solid var(--line);background:var(--paper);white-space:nowrap;}
-.table td{padding:7px 12px;border-bottom:1px solid var(--line);vertical-align:middle;}
-.table tr:last-child td{border-bottom:none;}
-.table tr:hover{background:rgba(0,0,0,.013);}
-.mono{font-family:ui-monospace,'SF Mono',Consolas,monospace;font-size:12px;color:var(--ink-soft);}
-.name-cell{font-weight:600;}
-.note-cell{color:var(--ink-soft);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.act-cell{display:flex;gap:4px;justify-content:flex-end;white-space:nowrap;}
-.muted{color:#b3aea5;}
+/* ── search ── */
+.sbox{display:flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:7px 10px;color:var(--ink-s);}
+.sbox input{border:none;background:none;outline:none;font-size:13px;color:var(--ink);flex:1;min-width:0;font-family:inherit;}
+.sbox-wide{padding:10px 13px;font-size:13.5px;}
+.sclear{background:none;border:none;cursor:pointer;color:var(--ink-s);display:flex;padding:0;}
 
-/* badges */
-.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;}
-.badge-paid{background:var(--good-soft);color:var(--good);}
-.badge-free{background:#e3e8f4;color:#34488f;}
-.badge-unpaid{background:var(--warn-soft);color:var(--warn);}
-.badge-normal{background:var(--neutral-soft);color:var(--ink-soft);}
-.badge-cancel{background:var(--danger-soft);color:var(--danger);}
-.badge-waiting{background:#f0e6f7;color:#6b3f8f;}
-.tier-badge{font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:1px 7px;border-radius:999px;display:inline-block;}
+/* ── table ── */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px;}
+.tbl th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-s);padding:8px 11px;border-bottom:1px solid var(--line);background:var(--paper);white-space:nowrap;}
+.tbl td{padding:7px 11px;border-bottom:1px solid var(--line);vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover{background:rgba(0,0,0,.012);}
+.mono{font-family:ui-monospace,'SF Mono',Consolas,monospace;font-size:11.5px;color:var(--ink-s);}
+.namec{font-weight:600;}
+.notec{color:var(--ink-s);max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.actc{display:flex;gap:3px;justify-content:flex-end;}
+.dim{color:#aaa9a5;}
 
-/* click-to-edit badges */
-.bcell{position:relative;display:inline-block;}
-.bbtn{border:none;cursor:pointer;font-family:inherit;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:700;}
-.bbtn:disabled{cursor:not-allowed;opacity:.7;}
-.bbtn:not(:disabled):hover{filter:brightness(.93);box-shadow:0 0 0 2px rgba(0,0,0,.06);}
-.badge-round{background:var(--neutral-soft);color:var(--ink-soft);}
-.badge-unassigned{background:var(--paper);color:#b3aea5;border:1px dashed var(--line);}
+/* ── badges ── */
+.badge{display:inline-flex;align-items:center;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;}
+.b-paid{background:var(--good-s);color:var(--good);}
+.b-free{background:#dde4f5;color:#2d4492;}
+.b-unpaid{background:var(--warn-s);color:var(--warn);}
+.b-normal{background:var(--neu-s);color:var(--neutral);}
+.b-cancel{background:var(--danger-s);color:var(--danger);}
+.b-waiting{background:#ede0f7;color:#5f2d91;}
+.b-rnd{background:var(--neu-s);color:var(--ink-s);}
+.b-unassigned{background:var(--paper);color:#ccc8c3;border:1px dashed var(--line);}
+.tbadge{font-size:10.5px;font-weight:700;color:var(--acc);background:var(--acc-s);padding:1px 7px;border-radius:999px;}
 
-/* popover */
-.popover{position:absolute;top:calc(100% + 4px);left:0;z-index:40;background:var(--paper-raised);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.13);padding:4px;min-width:130px;display:flex;flex-direction:column;gap:1px;}
-.pi{display:flex;align-items:center;gap:6px;background:none;border:none;text-align:left;padding:7px 9px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:var(--ink);width:100%;min-height:36px;}
+/* ── click-to-edit badges ── */
+.bc{position:relative;display:inline-block;}
+.bb{border:none;cursor:pointer;font-family:inherit;border-radius:999px;padding:2px 8px;font-size:10.5px;font-weight:700;}
+.bb:disabled{cursor:not-allowed;opacity:.65;}
+.bb:not(:disabled):hover{filter:brightness(.91);box-shadow:0 0 0 2px rgba(0,0,0,.07);}
+
+/* ── popover dropdown (desktop) ── */
+.pop-drop{position:absolute;top:calc(100% + 5px);left:0;z-index:40;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.14);padding:6px;min-width:150px;display:flex;flex-direction:column;gap:2px;}
+
+/* ── popover bottom sheet (mobile) ── */
+.pop-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;display:flex;align-items:flex-end;}
+.pop-sheet{background:var(--card);border-radius:16px 16px 0 0;width:100%;padding:0 0 24px;max-height:60vh;overflow-y:auto;}
+.pop-handle{width:36px;height:4px;background:var(--line);border-radius:2px;margin:10px auto 8px;}
+.pop-title{font-size:11px;font-weight:700;color:var(--ink-s);text-transform:uppercase;letter-spacing:.06em;padding:6px 14px 4px;}
+
+/* ── popover items ── */
+.pi{display:flex;align-items:center;gap:8px;background:none;border:none;text-align:left;padding:10px 14px;cursor:pointer;font-size:13px;font-weight:600;color:var(--ink);width:100%;font-family:inherit;}
 .pi:hover{background:var(--paper);}
-.pi-active{background:var(--accent-soft);}
+.pi-on{background:var(--acc-s);}
 
-/* misc */
-.empty{padding:24px;text-align:center;color:var(--ink-soft);font-size:13px;}
-.hint{font-size:12px;color:var(--ink-soft);padding:0 14px 12px;margin:0;}
+/* ── misc ── */
+.empty{padding:22px;text-align:center;color:var(--ink-s);font-size:12.5px;}
+.hint{font-size:11.5px;color:var(--ink-s);padding:0 13px 11px;margin:0;}
 
-/* buttons */
-.btn{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;border:1px solid transparent;cursor:pointer;transition:filter .15s;white-space:nowrap;font-family:inherit;}
-.btn-sm{padding:7px 12px;font-size:12.5px;}
-.btn:hover{filter:brightness(.96);}
+/* ── buttons ── */
+.btn{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;padding:8px 13px;border-radius:8px;border:1px solid transparent;cursor:pointer;white-space:nowrap;font-family:inherit;transition:filter .12s;}
+.btn-xs{padding:6px 11px;font-size:12px;}
+.btn:hover{filter:brightness(.95);}
 .btn:disabled{opacity:.5;cursor:not-allowed;}
-.btn-primary{background:var(--accent);color:#fff;}
-.btn-secondary{background:var(--accent-soft);color:var(--accent);}
-.btn-ghost{background:none;color:var(--ink-soft);border-color:var(--line);}
-.ibtn{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:var(--paper-raised);border-radius:7px;cursor:pointer;color:var(--ink-soft);}
-.ibtn:hover{background:var(--neutral-soft);color:var(--ink);}
-.ibtn-d:hover{background:var(--danger-soft);color:var(--danger);border-color:var(--danger-soft);}
+.btn-pri{background:var(--acc);color:#fff;}
+.btn-sec{background:var(--acc-s);color:var(--acc);}
+.btn-ghost{background:none;color:var(--ink-s);border-color:var(--line);}
+.ib{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:var(--card);border-radius:7px;cursor:pointer;color:var(--ink-s);}
+.ib:hover{background:var(--neu-s);color:var(--ink);}
+.ib-d:hover{background:var(--danger-s);color:var(--danger);border-color:var(--danger-s);}
 
-/* settings */
-.settings-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;gap:12px;flex-wrap:wrap;}
-.settings-row label{font-size:13px;font-weight:600;color:var(--ink-soft);}
-.fee-input-wrap{display:flex;align-items:center;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:var(--paper);}
-.fee-prefix{padding:0 8px;color:var(--ink-soft);font-weight:700;font-size:14px;background:var(--neutral-soft);align-self:stretch;display:flex;align-items:center;border-right:1px solid var(--line);}
-.fee-input{border:none!important;border-radius:0!important;width:120px;}
-.round-list{display:flex;flex-direction:column;}
-.round-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap;}
-.round-row:last-child{border-bottom:none;}
+/* ── settings ── */
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;gap:10px;flex-wrap:wrap;}
+.settings-row label{font-size:12.5px;font-weight:600;color:var(--ink-s);}
+.fee-wrap{display:flex;align-items:stretch;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:var(--paper);}
+.fee-pre{padding:0 8px;color:var(--ink-s);font-weight:700;font-size:14px;background:var(--neu-s);display:flex;align-items:center;border-right:1px solid var(--line);}
+.fee-inp{border:none!important;border-radius:0!important;width:110px;}
+.rlist{display:flex;flex-direction:column;}
+.rrow{display:flex;align-items:center;gap:8px;padding:10px 13px;border-bottom:1px solid var(--line);flex-wrap:wrap;}
+.rrow:last-child{border-bottom:none;}
 .rname{flex:1;min-width:100px;}
-.rlimit{display:flex;align-items:center;gap:6px;}
-.rlimit label{font-size:12px;color:var(--ink-soft);}
-.rlimit-input{width:64px;}
-.rocc{font-size:12px;color:var(--ink-soft);min-width:70px;}
-.dir-add-row{padding:0 14px 12px;}
-.form-err-inline{margin-bottom:8px;}
+.rlim{display:flex;align-items:center;gap:5px;}
+.rlim label{font-size:11.5px;color:var(--ink-s);}
+.rlim-inp{width:60px;}
+.rocc{font-size:11.5px;min-width:50px;}
+.dir-add{padding:0 13px 12px;}
 .dir-fields{display:flex;gap:6px;flex-wrap:wrap;}
-.dir-fields .input{flex:1;min-width:110px;}
-.dir-bulk{padding:0 14px 14px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:6px;}
-.bulk-lbl{font-size:11.5px;font-weight:700;color:var(--ink-soft);}
-.bulk-lbl code{background:var(--neutral-soft);padding:1px 5px;border-radius:4px;font-size:11px;}
-.dir-bulk-btn{align-self:flex-start;}
-.dir-search-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);}
-.pagination{display:flex;align-items:center;justify-content:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line);}
+.dir-fields .input{flex:1;min-width:100px;}
+.dir-bulk{padding:0 13px 13px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:6px;}
+.bulk-lbl{font-size:11px;font-weight:700;color:var(--ink-s);}
+.bulk-lbl code{background:var(--neu-s);padding:1px 5px;border-radius:4px;font-size:10.5px;}
+.dir-search{display:flex;align-items:center;gap:8px;padding:9px 13px;border-bottom:1px solid var(--line);}
+.pagination{display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 13px;border-top:1px solid var(--line);}
 
-/* input */
+/* ── Google Sheet guide ── */
+.sheet-guide{margin:0 13px 13px;border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:var(--paper);}
+.guide-title{font-size:12.5px;font-weight:700;margin-bottom:8px;}
+.guide-steps{margin:0 0 10px 0;padding-left:18px;font-size:12px;color:var(--ink-s);display:flex;flex-direction:column;gap:5px;}
+.guide-steps a{color:var(--acc);}
+.guide-steps code{background:var(--neu-s);padding:1px 5px;border-radius:4px;font-size:11px;}
+.code-block{background:#1e1e1e;border-radius:7px;padding:12px;overflow-x:auto;}
+.code-block pre{margin:0;font-size:10.5px;color:#d4d4d4;font-family:ui-monospace,'SF Mono',Consolas,monospace;line-height:1.6;white-space:pre;}
+
+/* ── final round ── */
+.toggle{display:flex;align-items:center;gap:8px;cursor:pointer;}
+.toggle input{display:none;}
+.toggle-slider{width:36px;height:20px;background:var(--line);border-radius:10px;position:relative;transition:background .2s;}
+.toggle-slider::after{content:"";position:absolute;width:16px;height:16px;background:#fff;border-radius:50%;top:2px;left:2px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.toggle input:checked+.toggle-slider{background:var(--acc);}
+.toggle input:checked+.toggle-slider::after{transform:translateX(16px);}
+.toggle-lbl{font-size:12px;font-weight:600;color:var(--ink-s);}
+.prize-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px dashed var(--line);flex-wrap:wrap;}
+.prize-rank{font-size:12px;font-weight:700;color:var(--ink-s);min-width:24px;}
+.winner-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);flex-wrap:wrap;}
+.winner-row:last-child{border-bottom:none;}
+.winner-rank{display:flex;align-items:center;gap:8px;min-width:140px;}
+.rank-medal{font-size:18px;}
+.rank-label{font-size:12px;font-weight:700;}
+.rank-amt{font-size:11px;color:var(--ink-s);}
+.winner-select{flex:1;min-width:180px;}
+.winner-badge{display:flex;align-items:center;gap:6px;}
+.result-list{display:flex;flex-direction:column;gap:8px;}
+.result-row{display:flex;align-items:center;gap:8px;font-size:13px;}
+.prize-amt{font-size:11.5px;font-weight:700;color:var(--good);background:var(--good-s);padding:1px 8px;border-radius:999px;margin-left:auto;}
+
+/* ── input ── */
 .input{font-size:13.5px;padding:8px 10px;border-radius:7px;border:1px solid var(--line);background:var(--paper);color:var(--ink);width:100%;outline:none;font-family:inherit;}
-.input:focus{border-color:var(--accent);}
+.input:focus{border-color:var(--acc);}
 .input:disabled{opacity:.55;cursor:not-allowed;}
+@media(max-width:480px){.input{font-size:16px;}} /* prevent iOS zoom */
 
-/* modal */
-.overlay{position:fixed;inset:0;background:rgba(28,27,26,.5);display:flex;align-items:flex-end;justify-content:center;padding:0;z-index:50;}
-@media(min-width:600px){.overlay{align-items:center;padding:20px;}}
-.modal{background:var(--paper-raised);border-radius:16px 16px 0 0;width:100%;max-width:480px;max-height:92vh;overflow-y:auto;box-shadow:0 -4px 40px rgba(0,0,0,.18);}
-@media(min-width:600px){.modal{border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.2);}}
-.modal-hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 12px;border-bottom:1px solid var(--line);}
-.modal-hdr h3{margin:0;font-size:15px;font-weight:700;}
-.modal-body{padding:16px;}
-.form-error{display:flex;align-items:center;gap:6px;background:var(--danger-soft);color:var(--danger);font-size:12px;font-weight:600;padding:9px 11px;border-radius:8px;margin-bottom:12px;}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-@media(max-width:420px){.form-grid{grid-template-columns:1fr;}}
+/* ── modal ── */
+.overlay{position:fixed;inset:0;background:rgba(20,18,16,.5);display:flex;align-items:flex-end;z-index:50;}
+@media(min-width:560px){.overlay{align-items:center;padding:16px;}}
+.modal{background:var(--card);border-radius:16px 16px 0 0;width:100%;max-width:480px;max-height:92vh;overflow-y:auto;box-shadow:0 -4px 40px rgba(0,0,0,.2);}
+@media(min-width:560px){.modal{border-radius:13px;margin:auto;box-shadow:0 20px 50px rgba(0,0,0,.22);}}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 15px 11px;border-bottom:1px solid var(--line);}
+.modal-hdr h3{margin:0;font-size:14.5px;font-weight:700;}
+.modal-body{padding:14px 15px;}
+.ferr{display:flex;align-items:center;gap:6px;background:var(--danger-s);color:var(--danger);font-size:12px;font-weight:600;padding:8px 11px;border-radius:8px;margin-bottom:11px;}
+.ferr-sm{margin-bottom:8px;}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:420px){.fgrid{grid-template-columns:1fr;}}
 .field{display:flex;flex-direction:column;gap:4px;}
 .field-full{grid-column:1/-1;}
-.field label{font-size:11.5px;font-weight:700;color:var(--ink-soft);}
-.modal-ftr{display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid var(--line);}
+.field label{font-size:11px;font-weight:700;color:var(--ink-s);}
+.modal-ftr{display:flex;justify-content:flex-end;gap:7px;padding:11px 15px;border-top:1px solid var(--line);}
 
-/* bulk preview */
-.bulk-preview{border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin-top:4px;display:flex;flex-direction:column;gap:3px;max-height:150px;overflow-y:auto;}
-.bulk-row{display:flex;align-items:center;gap:8px;font-size:12px;padding:2px 0;}
+/* ── bulk preview ── */
+.bprev{border:1px solid var(--line);border-radius:8px;padding:7px 10px;margin-top:4px;display:flex;flex-direction:column;gap:3px;max-height:140px;overflow-y:auto;}
+.brow{display:flex;align-items:center;gap:8px;font-size:11.5px;}
 .bname{flex:1;}
-.bulk-more{font-size:11px;color:var(--ink-soft);text-align:center;padding-top:4px;}
 `;
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
