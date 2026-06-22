@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Event Guest Manager</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>html,body,#root{margin:0;padding:0;min-height:100%;} body{background:#faf8f4;}</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useMemo,useRef,useEffect,useCallback}=React;
+
+/* ── SVG Icons ── */
+const Ic=({d,size=16})=><svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{d}</svg>;
+const Plus=({size=16})=><Ic size={size} d={<><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>}/>;
+const Trash=({size=16})=><Ic size={size} d={<><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></>}/>;
+const Edit=({size=16})=><Ic size={size} d={<><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></>}/>;
+const X=({size=16})=><Ic size={size} d={<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>}/>;
+const Users=({size=16})=><Ic size={size} d={<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></>}/>;
+const Dollar=({size=16})=><Ic size={size} d={<><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></>}/>;
+const Alert=({size=16})=><Ic size={size} d={<><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>}/>;
+const Ban=({size=16})=><Ic size={size} d={<><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></>}/>;
+const Clock=({size=16})=><Ic size={size} d={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>}/>;
+const Search=({size=16})=><Ic size={size} d={<><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>}/>;
+const Gear=({size=16})=><Ic size={size} d={<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></>}/>;
+const Floppy=({size=16})=><Ic size={size} d={<><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></>}/>;
+const DL=({size=16})=><Ic size={size} d={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>}/>;
+const BulkIcon=({size=16})=><Ic size={size} d={<><path d="M11 12H3M16 6H3M16 18H3M18 9v6M21 12h-6"/></>}/>;
+const Check2=({size=16})=><Ic size={size} d={<><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></>}/>;
+const Grid=({size=16})=><Ic size={size} d={<><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></>}/>;
+const ChevDown=({size=16})=><Ic size={size} d={<><polyline points="6 9 12 15 18 9"/></>}/>;
+
+/* ── Constants ── */
+const FEE={PAID:"paid",FREE:"free",UNPAID:"unpaid"};
+const ST={NORMAL:"normal",CANCEL:"cancel",WAITING:"waiting"};
+const FEE_LBL={paid:"Paid",free:"Free",unpaid:"Unpaid"};
+const ST_LBL={normal:"Normal",cancel:"Cancelled",waiting:"Waiting"};
+const FEE_CLS={paid:"badge badge-paid",free:"badge badge-free",unpaid:"badge badge-unpaid"};
+const ST_CLS={normal:"badge badge-normal",cancel:"badge badge-cancel",waiting:"badge badge-waiting"};
+
+/* ── Storage keys ── */
+const LS_GUESTS="egm2_guests";
+const LS_ROUNDS="egm2_rounds";
+const LS_FEE="egm2_fee";
+const LS_DIR="egm2_dir"; // directory stored separately — large
+
+function lsGet(k,def){try{const v=localStorage.getItem(k);return v?JSON.parse(v):def;}catch(e){return def;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+/* ── Directory: stored separately, accessed via ref ── */
+function loadDir(){return lsGet(LS_DIR,[]);}
+function saveDir(d){lsSet(LS_DIR,d);}
+
+/* ── Helpers ── */
+let _eid=Date.now();
+function newEid(){return String(++_eid);}
+function cx(...a){return a.filter(Boolean).join(" ");}
+function fmtMoney(n){return "$"+Number(n||0).toLocaleString("en-US",{minimumFractionDigits:0});}
+
+function sortGuests(guests,rounds){
+  const ro={};rounds.forEach((r,i)=>ro[r.id]=i);
+  return [...guests].sort((a,b)=>{
+    const rank=g=>{
+      if(g.status==="normal"&&g.round)return 0;
+      if(g.status==="normal"&&!g.round)return 1;
+      if(g.status==="waiting")return 2;
+      if(g.status==="cancel")return 3;
+      return 4;
+    };
+    const ra=rank(a),rb=rank(b);
+    if(ra!==rb)return ra-rb;
+    if(ra===0){const d=(ro[a.round]??99)-(ro[b.round]??99);if(d)return d;}
+    return a.memberId.localeCompare(b.memberId,undefined,{numeric:true});
+  });
+}
+
+function dlCSV(filename,rows){
+  const csv=rows.map(r=>r.map(c=>{const s=String(c??"");return(s.includes(",")||s.includes('"')||s.includes("\n"))?'"'+s.replace(/"/g,'""')+'"':s;}).join(",")).join("\n");
+  const b=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});
+  const u=URL.createObjectURL(b);const a=document.createElement("a");
+  a.href=u;a.download=filename;document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(u);
+}
+
+function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
+
+/* ── Main App ── */
+function App(){
+  const [guests,setGuests]=useState(()=>lsGet(LS_GUESTS,[]));
+  const [rounds,setRounds]=useState(()=>lsGet(LS_ROUNDS,[{id:"r1",name:"Round 1",limit:20},{id:"r2",name:"Round 2",limit:20}]));
+  const [feeAmount,setFeeAmount]=useState(()=>lsGet(LS_FEE,50));
+  const [tab,setTab]=useState("overview");
+  const [search,setSearch]=useState("");
+  const [roundSearch,setRoundSearch]=useState("");
+  const [showForm,setShowForm]=useState(false);
+  const [showBulk,setShowBulk]=useState(false);
+  const [editEid,setEditEid]=useState(null);
+  const [formErr,setFormErr]=useState("");
+  const [form,setForm]=useState(emptyForm());
+
+  // Directory lives in a ref — NOT React state — to avoid re-renders
+  const dirRef=useRef(loadDir());
+  // but we need a counter to trigger re-renders of dir tab only
+  const [dirVer,setDirVer]=useState(0);
+  function bumpDir(){setDirVer(v=>v+1);}
+
+  // Persist guests/rounds/fee (not directory — saved immediately on change)
+  useEffect(()=>lsSet(LS_GUESTS,guests),[guests]);
+  useEffect(()=>lsSet(LS_ROUNDS,rounds),[rounds]);
+  useEffect(()=>lsSet(LS_FEE,feeAmount),[feeAmount]);
+
+  function emptyForm(){return{memberId:"",name:"",tier:"",feeStatus:"unpaid",round:"",status:"normal",note:"",rejoin:false};}
+
+  /* dirMap: id->entry, built lazily */
+  const dirMap=useMemo(()=>{
+    const m={};dirRef.current.forEach(d=>m[d.id]={name:d.name,tier:d.tier||""});return m;
+  },[dirVer]);
+
+  /* Stats */
+  const roundCounts=useMemo(()=>{
+    const m={};rounds.forEach(r=>m[r.id]=0);
+    guests.forEach(g=>{if(g.status==="normal"&&g.round&&m[g.round]!==undefined)m[g.round]++;});
+    return m;
+  },[guests,rounds]);
+
+  const stats=useMemo(()=>{
+    const active=guests.filter(g=>g.status==="normal");
+    const paid=active.filter(g=>g.feeStatus==="paid");
+    const free=active.filter(g=>g.feeStatus==="free");
+    const unpaid=active.filter(g=>g.feeStatus==="unpaid");
+    const assigned=active.filter(g=>g.round);
+    const unassigned=active.filter(g=>!g.round);
+    const cancelled=guests.filter(g=>g.status==="cancel");
+    const waiting=guests.filter(g=>g.status==="waiting");
+    return{total:guests.length,active:active.length,assigned:assigned.length,
+      paid,free,unpaid,unassigned,cancelled,waiting,
+      totalCollected:paid.length*feeAmount};
+  },[guests,feeAmount]);
+
+  const sorted=useMemo(()=>sortGuests(guests,rounds),[guests,rounds]);
+  const filtered=useMemo(()=>{
+    const q=search.trim().toLowerCase();
+    if(!q)return sorted;
+    return sorted.filter(g=>g.memberId.toLowerCase().includes(q)||g.name.toLowerCase().includes(q)||(g.note||"").toLowerCase().includes(q));
+  },[sorted,search]);
+
+  const roundSearchRes=useMemo(()=>{
+    const q=roundSearch.trim().toLowerCase();
+    if(!q)return null;
+    return guests.filter(g=>g.status==="normal"&&g.round&&(g.memberId.toLowerCase().includes(q)||g.name.toLowerCase().includes(q)));
+  },[guests,roundSearch]);
+
+  /* Actions */
+  function startAdd(){setForm(emptyForm());setEditEid(null);setFormErr("");setShowForm(true);}
+  function startEdit(g){setForm({memberId:g.memberId,name:g.name,tier:g.tier||"",feeStatus:g.feeStatus,round:g.round,status:g.status,note:g.note,rejoin:false});setEditEid(g.eid);setFormErr("");setShowForm(true);}
+  function closeForm(){setShowForm(false);setFormErr("");}
+
+  function roundIsFull(roundId,excludeEid){
+    const r=rounds.find(r=>r.id===roundId);if(!r)return false;
+    // In same round, same memberId can't appear twice (even with rejoin)
+    return guests.filter(g=>g.round===roundId&&g.status==="normal"&&g.eid!==excludeEid).length>=r.limit;
+  }
+  function memberAlreadyInRound(memberId,roundId,excludeEid){
+    return guests.some(g=>g.memberId===memberId&&g.round===roundId&&g.status==="normal"&&g.eid!==excludeEid);
+  }
+
+  function handleIdChange(id){
+    const entry=dirMap[id.trim()];
+    setForm(f=>({...f,memberId:id,name:entry?.name||f.name,tier:entry?.tier||f.tier}));
+  }
+
+  function saveGuest(){
+    const memberId=form.memberId.trim(),name=form.name.trim();
+    if(!memberId)return setFormErr("Please enter a Member ID.");
+    if(!name)return setFormErr("Please enter a name.");
+    if(form.status==="normal"&&form.round){
+      if(roundIsFull(form.round,editEid)){
+        const r=rounds.find(r=>r.id===form.round);
+        return setFormErr(`"${r?.name}" is full (limit ${r?.limit}).`);
+      }
+      if(memberAlreadyInRound(memberId,form.round,editEid)){
+        return setFormErr(`Member ${memberId} is already assigned to this round. Each member can only play once per round.`);
+      }
+    }
+    const g={
+      eid:editEid||newEid(),
+      memberId,name,tier:form.tier.trim(),
+      feeStatus:form.feeStatus,
+      round:form.status==="normal"?form.round:"",
+      status:form.status,note:form.note.trim()
+    };
+    if(editEid)setGuests(prev=>prev.map(x=>x.eid===editEid?g:x));
+    else setGuests(prev=>[...prev,g]);
+    setShowForm(false);setFormErr("");
+  }
+
+  function delGuest(eid){setGuests(prev=>prev.filter(g=>g.eid!==eid));}
+  function updGuest(eid,patch){setGuests(prev=>prev.map(g=>g.eid===eid?{...g,...patch}:g));}
+
+  function tryAssignRound(eid,roundId){
+    const g=guests.find(x=>x.eid===eid);if(!g)return false;
+    if(roundId){
+      if(roundIsFull(roundId,eid)){const r=rounds.find(r=>r.id===roundId);alert(`"${r?.name}" is full.`);return false;}
+      if(memberAlreadyInRound(g.memberId,roundId,eid)){alert(`Member ${g.memberId} is already in this round.`);return false;}
+    }
+    updGuest(eid,{round:roundId,status:"normal"});return true;
+  }
+  function setGuestStatus(eid,status){
+    const g=guests.find(x=>x.eid===eid);
+    updGuest(eid,{status,round:status==="normal"?g?.round:""});
+  }
+
+  function addRound(){setRounds(prev=>[...prev,{id:"r_"+Date.now().toString(36).slice(-5),name:`Round ${prev.length+1}`,limit:20}]);}
+  function updRoundName(id,name){setRounds(prev=>prev.map(r=>r.id===id?{...r,name}:r));}
+  function updRoundLimit(id,limit){setRounds(prev=>prev.map(r=>r.id===id?{...r,limit:Math.max(0,limit)}:r));}
+  function removeRound(id){
+    if(guests.some(g=>g.round===id&&g.status==="normal"))return alert("Cannot delete a round with assigned guests. Move them first.");
+    setRounds(prev=>prev.filter(r=>r.id!==id));
+  }
+
+  function exportCSV(){
+    const rName=id=>rounds.find(r=>r.id===id)?.name||"";
+    dlCSV(`guests-${new Date().toISOString().slice(0,10)}.csv`,
+      [["Entry#","Member ID","Name","Tier","Fee","Round","Status","Note"],
+       ...sorted.map((g,i)=>[i+1,g.memberId,g.name,g.tier||"",FEE_LBL[g.feeStatus],g.round?rName(g.round):"",ST_LBL[g.status],g.note||""])]);
+  }
+
+  function bulkAdd(lines){
+    const existing=new Set(); // track memberId+round combos to prevent dupe in same round
+    guests.forEach(g=>{if(g.round&&g.status==="normal")existing.add(g.memberId);});
+    const created=[],skipped=[];
+    lines.forEach(rawId=>{
+      const id=rawId.trim();if(!id)return;
+      const entry=dirMap[id];
+      created.push({eid:newEid(),memberId:id,name:entry?.name||"(Unknown — please edit)",tier:entry?.tier||"",feeStatus:"unpaid",round:"",status:"normal",note:""});
+    });
+    if(created.length)setGuests(prev=>[...prev,...created]);
+    setShowBulk(false);
+    if(skipped.length)alert(`Skipped ${skipped.length}: ${skipped.join(", ")}`);
+  }
+
+  const tp={rounds,onEdit:startEdit,onAssignRound:tryAssignRound,onSetStatus:setGuestStatus,onSetFee:(eid,fs)=>updGuest(eid,{feeStatus:fs})};
+
+  return(
+    <div className="app">
+      <style>{CSS}</style>
+      <header className="topbar">
+        <div className="brand">
+          <div className="brand-mark">E</div>
+          <div>
+            <div className="brand-title">Event Guest Manager</div>
+            <div className="brand-sub">{stats.total} entries · {stats.active} active <span className="save-dot">● saved</span></div>
+          </div>
+        </div>
+        <div className="topbar-actions">
+          <button className="btn btn-ghost btn-sm" onClick={exportCSV}><DL size={14}/> CSV</button>
+          <button className="btn btn-secondary btn-sm" onClick={()=>setShowBulk(true)}><BulkIcon size={14}/> Bulk</button>
+          <button className="btn btn-primary btn-sm" onClick={startAdd}><Plus size={14}/> Add</button>
+        </div>
+      </header>
+
+      <nav className="tabs">
+        {[["overview","Overview",<Grid size={13}/>],["rounds","Rounds",<Users size={13}/>],["settings","Settings",<Gear size={13}/>]].map(([id,label,icon])=>(
+          <button key={id} className={cx("tab",tab===id&&"tab-active")} onClick={()=>setTab(id)}>{icon}{label}</button>
+        ))}
+      </nav>
+
+      <main className="content">
+        {tab==="overview"&&(
+          <div className="stack">
+            <div className="stat-grid">
+              <StatCard icon={<Users size={17}/>} label="Total entries" value={stats.total}/>
+              <StatCard icon={<Check2 size={17}/>} label="Assigned" value={stats.assigned} sub={`of ${stats.active} active`}/>
+              <StatCard icon={<Dollar size={17}/>} label="Collected" value={fmtMoney(stats.totalCollected)} sub={`${stats.paid.length} paid`} tone="good"/>
+              <StatCard icon={<Dollar size={17}/>} label="Free" value={stats.free.length}/>
+              <StatCard icon={<Alert size={17}/>} label="Unpaid" value={stats.unpaid.length} tone={stats.unpaid.length>0?"warn":"default"}/>
+              <StatCard icon={<Clock size={17}/>} label="Unassigned" value={stats.unassigned.length} tone={stats.unassigned.length>0?"warn":"default"}/>
+              <StatCard icon={<Ban size={17}/>} label="Cancelled" value={stats.cancelled.length} tone="danger"/>
+              <StatCard icon={<Clock size={17}/>} label="Waiting" value={stats.waiting.length} tone="neutral"/>
+            </div>
+            <div className="panel">
+              <div className="panel-header">
+                <h2>All entries</h2>
+                <div className="search-box">
+                  <Search size={14}/><input placeholder="Search ID, name, note…" value={search} onChange={e=>setSearch(e.target.value)}/>
+                  {search&&<button className="search-clear" onClick={()=>setSearch("")}><X size={13}/></button>}
+                </div>
+              </div>
+              <GuestTable guests={filtered} onDelete={delGuest} {...tp}/>
+            </div>
+          </div>
+        )}
+
+        {tab==="rounds"&&(
+          <div className="stack">
+            <div className="search-box search-wide">
+              <Search size={14}/><input placeholder="Search across all rounds…" value={roundSearch} onChange={e=>setRoundSearch(e.target.value)}/>
+              {roundSearch&&<button className="search-clear" onClick={()=>setRoundSearch("")}><X size={13}/></button>}
+            </div>
+            {roundSearchRes?(
+              <div className="panel">
+                <div className="panel-header"><h2>Results <span className="muted-sm">({roundSearchRes.length})</span></h2></div>
+                <GuestTable guests={roundSearchRes} onDelete={()=>{}} hideStatus {...tp}/>
+              </div>
+            ):rounds.length===0?<div className="empty">No rounds. Go to Settings.</div>
+            :rounds.map(r=>{
+              const rg=guests.filter(g=>g.status==="normal"&&g.round===r.id)
+                .sort((a,b)=>a.memberId.localeCompare(b.memberId,undefined,{numeric:true}));
+              const cnt=roundCounts[r.id]||0,full=cnt>=r.limit;
+              return(
+                <div className="panel" key={r.id}>
+                  <div className="panel-header">
+                    <h2>{r.name} <span className="muted-sm">({cnt}/{r.limit})</span></h2>
+                    {full&&<span className="badge badge-unpaid">Full</span>}
+                  </div>
+                  <GuestTable guests={rg} onDelete={()=>{}} hideRound hideStatus {...tp}/>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {tab==="settings"&&(
+          <SettingsTab
+            rounds={rounds} feeAmount={feeAmount} setFeeAmount={setFeeAmount}
+            updRoundName={updRoundName} updRoundLimit={updRoundLimit}
+            addRound={addRound} removeRound={removeRound} roundCounts={roundCounts}
+            dirRef={dirRef} dirVer={dirVer} bumpDir={bumpDir}
+          />
+        )}
+      </main>
+
+      {showForm&&<GuestFormModal form={form} setForm={setForm} rounds={rounds} error={formErr}
+        isEdit={!!editEid} onClose={closeForm} onSave={saveGuest} onIdChange={handleIdChange}/>}
+      {showBulk&&<BulkModal onClose={()=>setShowBulk(false)} onSubmit={bulkAdd} dirMap={dirMap}/>}
+    </div>
+  );
+}
+
+/* ── StatCard ── */
+function StatCard({icon,label,value,sub,tone="default"}){
+  return(
+    <div className={cx("stat-card",`tone-${tone}`)}>
+      <div className="stat-icon">{icon}</div>
+      <div className="stat-value">{value}</div>
+      <div className="stat-label">{label}</div>
+      {sub&&<div className="stat-sub">{sub}</div>}
+    </div>
+  );
+}
+
+/* ── Popover ── */
+function Popover({anchor,onClose,children}){
+  const ref=useRef(null);
+  useEffect(()=>{
+    const fn=e=>{if(ref.current&&!ref.current.contains(e.target)&&!anchor.current?.contains(e.target))onClose();};
+    document.addEventListener("mousedown",fn);return()=>document.removeEventListener("mousedown",fn);
+  },[onClose]);
+  return <div className="popover" ref={ref}>{children}</div>;
+}
+
+function FeeBadge({guest,onSetFee}){
+  const [open,setOpen]=useState(false);const ref=useRef(null);
+  return(
+    <div className="bcell" ref={ref}>
+      <button className={cx(FEE_CLS[guest.feeStatus],"bbtn")} onClick={()=>setOpen(o=>!o)}>{FEE_LBL[guest.feeStatus]}</button>
+      {open&&<Popover anchor={ref} onClose={()=>setOpen(false)}>
+        {Object.values(FEE).map(fs=>(
+          <button key={fs} className={cx("pi",guest.feeStatus===fs&&"pi-active")} onClick={()=>{onSetFee(guest.eid,fs);setOpen(false);}}>
+            <span className={FEE_CLS[fs]}>{FEE_LBL[fs]}</span>
+          </button>
+        ))}
+      </Popover>}
+    </div>
+  );
+}
+
+function RoundBadge({guest,rounds,onAssignRound}){
+  const [open,setOpen]=useState(false);const ref=useRef(null);
+  const rName=id=>rounds.find(r=>r.id===id)?.name;
+  const disabled=guest.status!=="normal";
+  return(
+    <div className="bcell" ref={ref}>
+      <button className={cx("bbtn",guest.round?"badge-round":"badge-unassigned")} disabled={disabled}
+        onClick={()=>!disabled&&setOpen(o=>!o)} title={disabled?"Restore to Normal first":""}>
+        {guest.round?rName(guest.round):"—"}
+      </button>
+      {open&&<Popover anchor={ref} onClose={()=>setOpen(false)}>
+        <button className={cx("pi",!guest.round&&"pi-active")} onClick={()=>{onAssignRound(guest.eid,"");setOpen(false);}}>Unassigned</button>
+        {rounds.map(r=>(
+          <button key={r.id} className={cx("pi",guest.round===r.id&&"pi-active")} onClick={()=>{if(onAssignRound(guest.eid,r.id))setOpen(false);}}>
+            {r.name}
+          </button>
+        ))}
+      </Popover>}
+    </div>
+  );
+}
+
+function StatusBadge({guest,onSetStatus}){
+  const [open,setOpen]=useState(false);const ref=useRef(null);
+  return(
+    <div className="bcell" ref={ref}>
+      <button className={cx(ST_CLS[guest.status],"bbtn")} onClick={()=>setOpen(o=>!o)}>{ST_LBL[guest.status]}</button>
+      {open&&<Popover anchor={ref} onClose={()=>setOpen(false)}>
+        {Object.values(ST).map(s=>(
+          <button key={s} className={cx("pi",guest.status===s&&"pi-active")} onClick={()=>{onSetStatus(guest.eid,s);setOpen(false);}}>
+            <span className={ST_CLS[s]}>{ST_LBL[s]}</span>
+          </button>
+        ))}
+      </Popover>}
+    </div>
+  );
+}
+
+/* ── Guest Table ── */
+function GuestTable({guests,rounds,onEdit,onDelete,onAssignRound,onSetStatus,onSetFee,hideRound,hideStatus}){
+  if(!guests.length)return <div className="empty">No entries found.</div>;
+  return(
+    <div className="table-wrap">
+      <table className="table">
+        <thead><tr>
+          <th>Member ID</th><th>Name</th><th>Tier</th><th>Fee</th>
+          {!hideRound&&<th>Round</th>}
+          {!hideStatus&&<th>Status</th>}
+          <th>Note</th><th></th>
+        </tr></thead>
+        <tbody>
+          {guests.map(g=>(
+            <tr key={g.eid}>
+              <td className="mono">{g.memberId}</td>
+              <td className="name-cell">{g.name}</td>
+              <td><span className="tier-badge">{g.tier||<span className="muted">—</span>}</span></td>
+              <td><FeeBadge guest={g} onSetFee={onSetFee}/></td>
+              {!hideRound&&<td><RoundBadge guest={g} rounds={rounds} onAssignRound={onAssignRound}/></td>}
+              {!hideStatus&&<td><StatusBadge guest={g} onSetStatus={onSetStatus}/></td>}
+              <td className="note-cell">{g.note||<span className="muted">—</span>}</td>
+              <td className="act-cell">
+                <button className="ibtn" onClick={()=>onEdit(g)}><Edit size={13}/></button>
+                <button className="ibtn ibtn-d" onClick={()=>{if(confirm(`Delete entry for ${g.memberId} (${g.name})?`))onDelete(g.eid);}}><Trash size={13}/></button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/* ── Settings Tab ── */
+const DIR_PAGE=50;
+function SettingsTab({rounds,feeAmount,setFeeAmount,updRoundName,updRoundLimit,addRound,removeRound,roundCounts,dirRef,dirVer,bumpDir}){
+  const [df,setDf]=useState({id:"",name:"",tier:""});
+  const [dfErr,setDfErr]=useState("");
+  const [bulkTxt,setBulkTxt]=useState("");
+  const [dirSearch,setDirSearch]=useState("");
+  const [dirPage,setDirPage]=useState(0);
+  const debouncedDirSearch=useRef(debounce(v=>{setDirSearch(v);setDirPage(0);},250));
+
+  const dir=dirRef.current;
+  const dirFiltered=useMemo(()=>{
+    const q=dirSearch.trim().toLowerCase();
+    if(!q)return dir;
+    return dir.filter(d=>d.id.toLowerCase().includes(q)||d.name.toLowerCase().includes(q)||(d.tier||"").toLowerCase().includes(q));
+  },[dirVer,dirSearch]);
+
+  const dirPage_items=useMemo(()=>dirFiltered.slice(dirPage*DIR_PAGE,(dirPage+1)*DIR_PAGE),[dirFiltered,dirPage]);
+  const dirTotalPages=Math.ceil(dirFiltered.length/DIR_PAGE);
+
+  function addEntry(){
+    const id=df.id.trim(),name=df.name.trim();
+    if(!id||!name)return setDfErr("Enter both ID and name.");
+    if(dir.some(d=>d.id===id))return setDfErr(`ID "${id}" already exists.`);
+    dirRef.current=[...dir,{id,name,tier:df.tier.trim()}];
+    saveDir(dirRef.current);bumpDir();
+    setDf({id:"",name:"",tier:""});setDfErr("");
+  }
+
+  function removeEntry(id){
+    dirRef.current=dir.filter(d=>d.id!==id);
+    saveDir(dirRef.current);bumpDir();
+  }
+
+  function importBulk(){
+    const existing=new Set(dir.map(d=>d.id));
+    const adds=[];
+    bulkTxt.split("\n").forEach(line=>{
+      // format: ID, Name, Tier (tier optional)
+      const parts=line.split(",");
+      const id=(parts[0]||"").trim();
+      const name=(parts[1]||"").trim();
+      const tier=(parts[2]||"").trim();
+      if(!id||!name||existing.has(id))return;
+      existing.add(id);adds.push({id,name,tier});
+    });
+    if(adds.length){dirRef.current=[...dir,...adds];saveDir(dirRef.current);bumpDir();setBulkTxt("");}
+  }
+
+  function clearAll(){
+    if(confirm("⚠️ Delete ALL data (guests, rounds, directory)? This cannot be undone.")){
+      [LS_GUESTS,LS_ROUNDS,LS_FEE,LS_DIR].forEach(k=>localStorage.removeItem(k));
+      window.location.reload();
+    }
+  }
+
+  return(
+    <div className="stack">
+      {/* Fee */}
+      <div className="panel">
+        <div className="panel-header"><h2>Registration fee</h2></div>
+        <div className="settings-row">
+          <label>Fee per entry (USD $)</label>
+          <div className="fee-input-wrap">
+            <span className="fee-prefix">$</span>
+            <input type="number" className="input fee-input" value={feeAmount} min={0} step={1}
+              onChange={e=>setFeeAmount(Number(e.target.value)||0)}/>
+          </div>
+        </div>
+        <p className="hint">Total collected = Paid entries × fee.</p>
+      </div>
+
+      {/* Rounds */}
+      <div className="panel">
+        <div className="panel-header"><h2>Rounds &amp; limits</h2><button className="btn btn-secondary btn-sm" onClick={addRound}><Plus size={14}/> Add</button></div>
+        <div className="round-list">
+          {rounds.map(r=>(
+            <div className="round-row" key={r.id}>
+              <input className="input rname" value={r.name} onChange={e=>updRoundName(r.id,e.target.value)}/>
+              <div className="rlimit">
+                <label>Limit</label>
+                <input type="number" className="input rlimit-input" value={r.limit} min={0} onChange={e=>updRoundLimit(r.id,Number(e.target.value)||0)}/>
+              </div>
+              <div className="rocc">{roundCounts[r.id]||0}/{r.limit}</div>
+              <button className="ibtn ibtn-d" onClick={()=>removeRound(r.id)}><Trash size={13}/></button>
+            </div>
+          ))}
+          {!rounds.length&&<div className="empty">No rounds yet.</div>}
+        </div>
+      </div>
+
+      {/* Directory */}
+      <div className="panel">
+        <div className="panel-header">
+          <h2>Member directory <span className="muted-sm">({dir.length} entries)</span></h2>
+        </div>
+        <p className="hint">ID → Name + Tier lookup. Used to auto-fill when adding guests.</p>
+
+        {/* Single add */}
+        <div className="dir-add-row">
+          {dfErr&&<div className="form-error form-err-inline"><Alert size={13}/> {dfErr}</div>}
+          <div className="dir-fields">
+            <input className="input" placeholder="Member ID" value={df.id} onChange={e=>setDf({...df,id:e.target.value})}/>
+            <input className="input" placeholder="Full name"  value={df.name} onChange={e=>setDf({...df,name:e.target.value})}/>
+            <input className="input" placeholder="Tier (opt)" value={df.tier} onChange={e=>setDf({...df,tier:e.target.value})}/>
+            <button className="btn btn-secondary btn-sm" onClick={addEntry}><Plus size={14}/> Add</button>
+          </div>
+        </div>
+
+        {/* Bulk import */}
+        <div className="dir-bulk">
+          <label className="bulk-lbl">Bulk import — one per line: <code>ID, Name, Tier</code> (Tier optional)</label>
+          <textarea className="input" rows={4} value={bulkTxt}
+            placeholder={"MB001, Nguyen Van A, Gold\nMB002, Tran Thi B, Silver\nMB003, Le Van C"}
+            onChange={e=>setBulkTxt(e.target.value)}/>
+          <button className="btn btn-secondary btn-sm dir-bulk-btn" onClick={importBulk} disabled={!bulkTxt.trim()}>
+            <BulkIcon size={14}/> Import
+          </button>
+        </div>
+
+        {/* Search + paginated list */}
+        <div className="dir-search-row">
+          <div className="search-box">
+            <Search size={13}/>
+            <input placeholder="Search directory…" onChange={e=>debouncedDirSearch.current(e.target.value)}/>
+          </div>
+          <span className="muted-sm">{dirFiltered.length} result(s)</span>
+        </div>
+
+        <div className="table-wrap">
+          {dirPage_items.length===0?<div className="empty">No entries.</div>:(
+            <table className="table">
+              <thead><tr><th>ID</th><th>Name</th><th>Tier</th><th></th></tr></thead>
+              <tbody>
+                {dirPage_items.map(d=>(
+                  <tr key={d.id}>
+                    <td className="mono">{d.id}</td>
+                    <td className="name-cell">{d.name}</td>
+                    <td><span className="tier-badge">{d.tier||<span className="muted">—</span>}</span></td>
+                    <td className="act-cell">
+                      <button className="ibtn ibtn-d" onClick={()=>removeEntry(d.id)}><Trash size={13}/></button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {dirTotalPages>1&&(
+          <div className="pagination">
+            <button className="btn btn-ghost btn-sm" disabled={dirPage===0} onClick={()=>setDirPage(p=>p-1)}>← Prev</button>
+            <span className="muted-sm">Page {dirPage+1} / {dirTotalPages}</span>
+            <button className="btn btn-ghost btn-sm" disabled={dirPage>=dirTotalPages-1} onClick={()=>setDirPage(p=>p+1)}>Next →</button>
+          </div>
+        )}
+      </div>
+
+      {/* Danger */}
+      <div className="panel panel-danger">
+        <div className="panel-header"><h2 style={{color:"var(--danger)"}}>Danger zone</h2></div>
+        <div className="settings-row">
+          <div>
+            <div style={{fontWeight:600,fontSize:13}}>Clear all data</div>
+            <div style={{fontSize:12,color:"var(--ink-soft)"}}>Permanently delete all guests, rounds, and directory.</div>
+          </div>
+          <button className="btn btn-sm" style={{background:"var(--danger)",color:"#fff"}} onClick={clearAll}>Clear all</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Guest Form Modal ── */
+function GuestFormModal({form,setForm,rounds,error,isEdit,onClose,onSave,onIdChange}){
+  return(
+    <div className="overlay" onClick={onClose}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <div className="modal-hdr">
+          <h3>{isEdit?"Edit entry":"Add guest"}</h3>
+          <button className="ibtn" onClick={onClose}><X size={17}/></button>
+        </div>
+        <div className="modal-body">
+          {error&&<div className="form-error"><Alert size={14}/> {error}</div>}
+          <div className="form-grid">
+            <div className="field">
+              <label>Member ID *</label>
+              <input className="input" value={form.memberId} disabled={isEdit}
+                onChange={e=>onIdChange(e.target.value)} placeholder="e.g. MB001"/>
+            </div>
+            <div className="field">
+              <label>Name *</label>
+              <input className="input" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Auto-filled from directory"/>
+            </div>
+            <div className="field">
+              <label>Tier</label>
+              <input className="input" value={form.tier} onChange={e=>setForm({...form,tier:e.target.value})} placeholder="Auto-filled from directory"/>
+            </div>
+            <div className="field">
+              <label>Fee status</label>
+              <select className="input" value={form.feeStatus} onChange={e=>setForm({...form,feeStatus:e.target.value})}>
+                <option value="paid">Paid</option><option value="free">Free</option><option value="unpaid">Unpaid</option>
+              </select>
+            </div>
+            <div className="field">
+              <label>Status</label>
+              <select className="input" value={form.status} onChange={e=>setForm({...form,status:e.target.value})}>
+                <option value="normal">Normal</option><option value="cancel">Cancelled</option><option value="waiting">Waiting</option>
+              </select>
+            </div>
+            <div className="field">
+              <label>Round</label>
+              <select className="input" value={form.round} disabled={form.status!=="normal"} onChange={e=>setForm({...form,round:e.target.value})}>
+                <option value="">— Unassigned —</option>
+                {rounds.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
+              </select>
+            </div>
+            <div className="field field-full">
+              <label>Note</label>
+              <textarea className="input" rows={2} value={form.note} onChange={e=>setForm({...form,note:e.target.value})} placeholder="Rejoin reason, special request…"/>
+            </div>
+          </div>
+          {isEdit&&<p className="hint" style={{padding:"8px 0 0"}}>💡 Same member can have multiple entries (re-joins). Each entry gets its own row.</p>}
+        </div>
+        <div className="modal-ftr">
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary btn-sm" onClick={onSave}><Floppy size={14}/> {isEdit?"Save":"Add guest"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Bulk Add Modal ── */
+function BulkModal({onClose,onSubmit,dirMap}){
+  const [text,setText]=useState("");
+  const lines=text.split(/[\n,]/).map(l=>l.trim()).filter(Boolean);
+  const preview=lines.slice(0,6);
+  return(
+    <div className="overlay" onClick={onClose}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <div className="modal-hdr"><h3>Bulk add guests</h3><button className="ibtn" onClick={onClose}><X size={17}/></button></div>
+        <div className="modal-body">
+          <div className="field">
+            <label>Paste Member IDs — one per line or comma-separated</label>
+            <textarea className="input" rows={6} autoFocus value={text} onChange={e=>setText(e.target.value)} placeholder={"MB001\nMB002\nMB003"}/>
+          </div>
+          <p className="hint">{lines.length} ID(s). Names/Tiers auto-filled from directory. Same ID can be added multiple times (re-join). All start as <strong>Normal / Unpaid / Unassigned</strong>.</p>
+          {preview.length>0&&(
+            <div className="bulk-preview">
+              {preview.map((id,i)=>(
+                <div className="bulk-row" key={i}>
+                  <span className="mono">{id}</span>
+                  <span className={cx("bname",!dirMap[id]&&"muted")}>{dirMap[id]?.name||"Not in directory"}</span>
+                  <span className="tier-badge">{dirMap[id]?.tier||""}</span>
+                </div>
+              ))}
+              {lines.length>6&&<div className="bulk-more">+{lines.length-6} more</div>}
+            </div>
+          )}
+        </div>
+        <div className="modal-ftr">
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary btn-sm" disabled={!lines.length} onClick={()=>onSubmit(lines)}>
+            <BulkIcon size={14}/> Add {lines.length||""} entries
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════ CSS ══════════════ */
+const CSS=`
+:root{
+  --ink:#1c1b1a;--ink-soft:#5c5853;
+  --paper:#faf8f4;--paper-raised:#fff;
+  --line:#e6e1d8;
+  --accent:#b55327;--accent-soft:#f4e4d8;
+  --good:#2f6b4f;--good-soft:#e3efe7;
+  --warn:#9a6a1a;--warn-soft:#faf0db;
+  --danger:#a13b34;--danger-soft:#f6e3e0;
+  --neutral:#5c5853;--neutral-soft:#ece9e3;
+  --rad:10px;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+.app{background:var(--paper);color:var(--ink);min-height:100vh;font-size:14px;line-height:1.5;}
+
+/* topbar */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--paper-raised);gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:10;}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand-mark{width:32px;height:32px;border-radius:7px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:700;font-size:16px;flex-shrink:0;}
+.brand-title{font-weight:700;font-size:14px;letter-spacing:-.01em;}
+.brand-sub{font-size:11.5px;color:var(--ink-soft);display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.save-dot{font-size:10.5px;color:var(--good);background:var(--good-soft);padding:1px 6px;border-radius:999px;font-weight:600;}
+.topbar-actions{display:flex;gap:6px;}
+
+/* tabs */
+.tabs{display:flex;background:var(--paper-raised);border-bottom:1px solid var(--line);padding:0 8px;position:sticky;top:61px;z-index:9;}
+.tab{display:flex;align-items:center;gap:5px;background:none;border:none;padding:10px 12px;font-size:13px;font-weight:600;color:var(--ink-soft);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;white-space:nowrap;}
+.tab:hover{color:var(--ink);}
+.tab-active{color:var(--accent);border-bottom-color:var(--accent);}
+
+/* content */
+.content{padding:16px;max-width:900px;margin:0 auto;}
+.stack{display:flex;flex-direction:column;gap:14px;}
+
+/* stat grid */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+@media(max-width:600px){.stat-grid{grid-template-columns:repeat(2,1fr);}}
+.stat-card{background:var(--paper-raised);border:1px solid var(--line);border-radius:var(--rad);padding:12px 14px;}
+.stat-icon{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:6px;background:var(--neutral-soft);color:var(--ink-soft);}
+.tone-good .stat-icon{background:var(--good-soft);color:var(--good);}
+.tone-warn .stat-icon{background:var(--warn-soft);color:var(--warn);}
+.tone-danger .stat-icon{background:var(--danger-soft);color:var(--danger);}
+.tone-neutral .stat-icon{background:var(--neutral-soft);color:var(--neutral);}
+.stat-value{font-size:18px;font-weight:700;letter-spacing:-.01em;}
+.stat-label{font-size:11px;color:var(--ink-soft);margin-top:1px;}
+.stat-sub{font-size:10.5px;color:var(--ink-soft);margin-top:3px;}
+
+/* panel */
+.panel{background:var(--paper-raised);border:1px solid var(--line);border-radius:var(--rad);overflow:visible;}
+.panel-danger{border-color:#f0d0ce;}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line);gap:10px;flex-wrap:wrap;}
+.panel-header h2{font-size:13.5px;font-weight:700;margin:0;display:flex;align-items:center;gap:6px;}
+.muted-sm{font-size:11.5px;color:var(--ink-soft);font-weight:500;}
+
+/* search */
+.search-box{display:flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--ink-soft);flex:1;min-width:0;}
+.search-box input{border:none;background:none;outline:none;font-size:13px;color:var(--ink);flex:1;min-width:0;}
+.search-wide{padding:10px 14px;font-size:13.5px;}
+.search-clear{background:none;border:none;cursor:pointer;color:var(--ink-soft);display:flex;padding:0;}
+
+/* table */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.table{width:100%;border-collapse:collapse;font-size:13px;}
+.table th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);padding:9px 12px;border-bottom:1px solid var(--line);background:var(--paper);white-space:nowrap;}
+.table td{padding:7px 12px;border-bottom:1px solid var(--line);vertical-align:middle;}
+.table tr:last-child td{border-bottom:none;}
+.table tr:hover{background:rgba(0,0,0,.013);}
+.mono{font-family:ui-monospace,'SF Mono',Consolas,monospace;font-size:12px;color:var(--ink-soft);}
+.name-cell{font-weight:600;}
+.note-cell{color:var(--ink-soft);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.act-cell{display:flex;gap:4px;justify-content:flex-end;white-space:nowrap;}
+.muted{color:#b3aea5;}
+
+/* badges */
+.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;}
+.badge-paid{background:var(--good-soft);color:var(--good);}
+.badge-free{background:#e3e8f4;color:#34488f;}
+.badge-unpaid{background:var(--warn-soft);color:var(--warn);}
+.badge-normal{background:var(--neutral-soft);color:var(--ink-soft);}
+.badge-cancel{background:var(--danger-soft);color:var(--danger);}
+.badge-waiting{background:#f0e6f7;color:#6b3f8f;}
+.tier-badge{font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:1px 7px;border-radius:999px;display:inline-block;}
+
+/* click-to-edit badges */
+.bcell{position:relative;display:inline-block;}
+.bbtn{border:none;cursor:pointer;font-family:inherit;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:700;}
+.bbtn:disabled{cursor:not-allowed;opacity:.7;}
+.bbtn:not(:disabled):hover{filter:brightness(.93);box-shadow:0 0 0 2px rgba(0,0,0,.06);}
+.badge-round{background:var(--neutral-soft);color:var(--ink-soft);}
+.badge-unassigned{background:var(--paper);color:#b3aea5;border:1px dashed var(--line);}
+
+/* popover */
+.popover{position:absolute;top:calc(100% + 4px);left:0;z-index:40;background:var(--paper-raised);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.13);padding:4px;min-width:130px;display:flex;flex-direction:column;gap:1px;}
+.pi{display:flex;align-items:center;gap:6px;background:none;border:none;text-align:left;padding:7px 9px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:var(--ink);width:100%;min-height:36px;}
+.pi:hover{background:var(--paper);}
+.pi-active{background:var(--accent-soft);}
+
+/* misc */
+.empty{padding:24px;text-align:center;color:var(--ink-soft);font-size:13px;}
+.hint{font-size:12px;color:var(--ink-soft);padding:0 14px 12px;margin:0;}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;border:1px solid transparent;cursor:pointer;transition:filter .15s;white-space:nowrap;font-family:inherit;}
+.btn-sm{padding:7px 12px;font-size:12.5px;}
+.btn:hover{filter:brightness(.96);}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-secondary{background:var(--accent-soft);color:var(--accent);}
+.btn-ghost{background:none;color:var(--ink-soft);border-color:var(--line);}
+.ibtn{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:var(--paper-raised);border-radius:7px;cursor:pointer;color:var(--ink-soft);}
+.ibtn:hover{background:var(--neutral-soft);color:var(--ink);}
+.ibtn-d:hover{background:var(--danger-soft);color:var(--danger);border-color:var(--danger-soft);}
+
+/* settings */
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;gap:12px;flex-wrap:wrap;}
+.settings-row label{font-size:13px;font-weight:600;color:var(--ink-soft);}
+.fee-input-wrap{display:flex;align-items:center;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:var(--paper);}
+.fee-prefix{padding:0 8px;color:var(--ink-soft);font-weight:700;font-size:14px;background:var(--neutral-soft);align-self:stretch;display:flex;align-items:center;border-right:1px solid var(--line);}
+.fee-input{border:none!important;border-radius:0!important;width:120px;}
+.round-list{display:flex;flex-direction:column;}
+.round-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap;}
+.round-row:last-child{border-bottom:none;}
+.rname{flex:1;min-width:100px;}
+.rlimit{display:flex;align-items:center;gap:6px;}
+.rlimit label{font-size:12px;color:var(--ink-soft);}
+.rlimit-input{width:64px;}
+.rocc{font-size:12px;color:var(--ink-soft);min-width:70px;}
+.dir-add-row{padding:0 14px 12px;}
+.form-err-inline{margin-bottom:8px;}
+.dir-fields{display:flex;gap:6px;flex-wrap:wrap;}
+.dir-fields .input{flex:1;min-width:110px;}
+.dir-bulk{padding:0 14px 14px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:6px;}
+.bulk-lbl{font-size:11.5px;font-weight:700;color:var(--ink-soft);}
+.bulk-lbl code{background:var(--neutral-soft);padding:1px 5px;border-radius:4px;font-size:11px;}
+.dir-bulk-btn{align-self:flex-start;}
+.dir-search-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);}
+.pagination{display:flex;align-items:center;justify-content:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line);}
+
+/* input */
+.input{font-size:13.5px;padding:8px 10px;border-radius:7px;border:1px solid var(--line);background:var(--paper);color:var(--ink);width:100%;outline:none;font-family:inherit;}
+.input:focus{border-color:var(--accent);}
+.input:disabled{opacity:.55;cursor:not-allowed;}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(28,27,26,.5);display:flex;align-items:flex-end;justify-content:center;padding:0;z-index:50;}
+@media(min-width:600px){.overlay{align-items:center;padding:20px;}}
+.modal{background:var(--paper-raised);border-radius:16px 16px 0 0;width:100%;max-width:480px;max-height:92vh;overflow-y:auto;box-shadow:0 -4px 40px rgba(0,0,0,.18);}
+@media(min-width:600px){.modal{border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.2);}}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 12px;border-bottom:1px solid var(--line);}
+.modal-hdr h3{margin:0;font-size:15px;font-weight:700;}
+.modal-body{padding:16px;}
+.form-error{display:flex;align-items:center;gap:6px;background:var(--danger-soft);color:var(--danger);font-size:12px;font-weight:600;padding:9px 11px;border-radius:8px;margin-bottom:12px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:420px){.form-grid{grid-template-columns:1fr;}}
+.field{display:flex;flex-direction:column;gap:4px;}
+.field-full{grid-column:1/-1;}
+.field label{font-size:11.5px;font-weight:700;color:var(--ink-soft);}
+.modal-ftr{display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid var(--line);}
+
+/* bulk preview */
+.bulk-preview{border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin-top:4px;display:flex;flex-direction:column;gap:3px;max-height:150px;overflow-y:auto;}
+.bulk-row{display:flex;align-items:center;gap:8px;font-size:12px;padding:2px 0;}
+.bname{flex:1;}
+.bulk-more{font-size:11px;color:var(--ink-soft);text-align:center;padding-top:4px;}
+`;
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
