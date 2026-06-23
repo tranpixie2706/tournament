@@ -92,7 +92,8 @@ function dlCSV(name,rows){
    Setup: create free account at jsonbin.io, create a bin, paste the Bin ID + API key in Settings.
 ── */
 async function syncRead(binId, apiKey){
-  const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+  const url = "https://api.jsonbin.io/v3/b/" + binId + "/latest";
+  const res = await fetch(url, {
     method: "GET",
     headers: {
       "X-Master-Key": apiKey,
@@ -104,7 +105,8 @@ async function syncRead(binId, apiKey){
 }
 
 async function syncWrite(binId, apiKey, payload){
-  const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+  const url = "https://api.jsonbin.io/v3/b/" + binId;
+  const res = await fetch(url, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -125,6 +127,8 @@ function App(){
   const [eventName,setEventName]=useState(()=>lsGet(LS.EVENT,""));
   const [binId,setBinId]=useState(()=>lsGet(LS.BIN_ID,""));
   const [apiKey,setApiKey]=useState(()=>lsGet(LS.API_KEY,""));
+  // Save to localStorage whenever binId or apiKey changes
+  const saveCreds=(bid,ak)=>{lsSet(LS.BIN_ID,bid);lsSet(LS.API_KEY,ak);};
   const [syncing,setSyncing]=useState(false);
   const [syncMsg,setSyncMsg]=useState("");
   const [tab,setTab]=useState("overview");
@@ -748,6 +752,87 @@ function FinalTab({finalRound,setFinalRound,guests}){
   );
 }
 
+/* ── Sync Panel (stable — uses local state to avoid re-render wipe) ── */
+function SyncPanel({binId,setBinId,apiKey,setApiKey,syncing,onPush,onPull}){
+  // Use local state so typing doesn't trigger parent re-render
+  const [localBin, setLocalBin] = useState(binId||"");
+  const [localKey, setLocalKey] = useState(apiKey||"");
+  const [saved, setSaved]       = useState(!!(binId&&apiKey));
+
+  function handleSave(){
+    const b = localBin.trim();
+    const k = localKey.trim();
+    if(!b||!k){ alert("Enter both Bin ID and API Key."); return; }
+    setBinId(b);
+    setApiKey(k);
+    lsSet(LS.BIN_ID, b);
+    lsSet(LS.API_KEY, k);
+    setSaved(true);
+  }
+
+  return(
+    <div className="panel">
+      <div className="panel-hdr"><h2><ICloud s={14}/> Cloud sync (JSONBin)</h2></div>
+      <p className="hint">
+        Free sync across desktop &amp; mobile via <strong>jsonbin.io</strong>.
+        {" "}<a href="#jb-guide" style={{color:"var(--acc)"}}>Setup guide ↓</a>
+      </p>
+
+      <div style={{padding:"0 13px 13px",display:"flex",flexDirection:"column",gap:10}}>
+        <div className="field">
+          <label>Bin ID</label>
+          <input className="input" value={localBin}
+            onChange={e=>{ setLocalBin(e.target.value); setSaved(false); }}
+            placeholder="6a3a03a4da38895dfeef4942"
+            autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="false"/>
+        </div>
+        <div className="field">
+          <label>API Key (Master Key)</label>
+          <input className="input" value={localKey}
+            onChange={e=>{ setLocalKey(e.target.value); setSaved(false); }}
+            placeholder="Paste your $2a$10$… key here"
+            autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="false"/>
+        </div>
+
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+          {!saved&&(
+            <button className="btn btn-pri btn-xs" onClick={handleSave}>
+              <ISave s={13}/> Save credentials
+            </button>
+          )}
+          {saved&&<>
+            <span style={{fontSize:11.5,color:"var(--good)",fontWeight:600}}>✓ Credentials saved</span>
+            <button className="btn btn-sec btn-xs" onClick={onPull} disabled={syncing}>
+              <IRefresh s={13}/> Pull latest
+            </button>
+            <button className="btn btn-pri btn-xs" onClick={onPush} disabled={syncing}>
+              <ICloud s={13}/> Push / save
+            </button>
+            <button className="btn btn-ghost btn-xs" onClick={()=>setSaved(false)}>Edit</button>
+          </>}
+        </div>
+
+        {saved&&<div style={{fontSize:11,color:"var(--ink-s)"}}>
+          Bin: <code style={{background:"var(--neu-s)",padding:"1px 5px",borderRadius:4}}>{localBin.slice(0,10)}…</code>
+          {" "}Key: <code style={{background:"var(--neu-s)",padding:"1px 5px",borderRadius:4}}>{localKey.slice(0,8)}…</code>
+        </div>}
+      </div>
+
+      <div className="sheet-guide" id="jb-guide">
+        <div className="guide-title">📋 Setup (one-time, ~2 min)</div>
+        <ol className="guide-steps">
+          <li>Go to <a href="https://jsonbin.io" target="_blank" style={{color:"var(--acc)"}}>jsonbin.io</a> → Sign Up (free).</li>
+          <li>Top menu → <strong>API Keys</strong> → copy your <strong>Secret Key</strong> → paste into <em>API Key</em> above.</li>
+          <li>Top menu → <strong>Bins → Create Bin</strong> → paste the JSON below as content → Save → copy the <strong>Bin ID</strong> from the URL.</li>
+          <li className="code-inline"><code>{"{\"guests\":[]}"}</code></li>
+          <li>Click <strong>Save credentials</strong>, then <strong>Push / save</strong> to upload data.</li>
+          <li>On mobile: open app → Settings → enter same Bin ID + API Key → Save → Pull latest.</li>
+        </ol>
+      </div>
+    </div>
+  );
+}
+
 /* ── Settings Tab ── */
 const DPAGE=50;
 function SettingsTab({rounds,setRounds,feeAmt,setFeeAmt,eventName,setEventName,binId,setBinId,apiKey,setApiKey,roundCounts,dirRef,dirVer,setDirVer}){
@@ -809,45 +894,8 @@ function SettingsTab({rounds,setRounds,feeAmt,setFeeAmt,eventName,setEventName,b
       </div>
 
       {/* Sync */}
-      <div className="panel">
-        <div className="panel-hdr"><h2><ICloud s={14}/> Cloud sync (JSONBin)</h2></div>
-        <p className="hint">
-          Sync data across desktop &amp; mobile using <strong>JSONBin.io</strong> (free, no install needed).
-          Setup takes ~2 minutes. <a href="#jb-guide" style={{color:"var(--acc)"}}>Setup guide ↓</a>
-        </p>
-        <div className="settings-row" style={{flexWrap:"wrap",gap:8}}>
-          <label style={{minWidth:80}}>Bin ID</label>
-          <input className="input" value={binId} onChange={e=>setBinId(e.target.value.trim())}
-            placeholder="e.g. 64a3f1c8acd3cb34a8…" style={{maxWidth:300,fontSize:12}}/>
-        </div>
-        <div className="settings-row" style={{flexWrap:"wrap",gap:8}}>
-          <label style={{minWidth:80}}>API Key</label>
-          <input className="input" value={apiKey} onChange={e=>setApiKey(e.target.value.trim())}
-            placeholder="$2a$10$…" style={{maxWidth:300,fontSize:12}}/>
-        </div>
-        <div style={{padding:"0 13px 13px",display:"flex",gap:8,flexWrap:"wrap"}}>
-          {binId&&apiKey&&<>
-            <button className="btn btn-sec btn-xs" onClick={()=>syncFromCloud(false)} disabled={syncing}>
-              <IRefresh s={13}/> Pull latest
-            </button>
-            <button className="btn btn-pri btn-xs" onClick={syncToCloud} disabled={syncing}>
-              <ICloud s={13}/> Push / save
-            </button>
-          </>}
-          {(!binId||!apiKey)&&<p style={{fontSize:12,color:"var(--warn)",margin:0}}>⚠️ Enter both Bin ID and API Key above, then push/pull.</p>}
-        </div>
-        <div className="sheet-guide" id="jb-guide">
-          <div className="guide-title">📋 Setup guide (one-time, ~2 min)</div>
-          <ol className="guide-steps">
-            <li>Go to <a href="https://jsonbin.io" target="_blank" style={{color:"var(--acc)"}}>jsonbin.io</a> → click <strong>Sign Up</strong> (free).</li>
-            <li>After login, go to <strong>API Keys</strong> (top menu) → copy your <strong>Secret Key</strong> → paste into <em>API Key</em> above.</li>
-            <li>Click <strong>Bins → Create Bin</strong> → paste <code>{"{}"}</code> as content → Save. Copy the <strong>Bin ID</strong> from the URL → paste into <em>Bin ID</em> above.</li>
-            <li>Click <strong>↑ Push / save</strong> to upload your current data.</li>
-            <li>On any other device: open the app, go to Settings, enter the same Bin ID + API Key → click <strong>↓ Pull latest</strong>. Done — data synced!</li>
-            <li>💡 The app auto-pulls on startup if Bin ID + API Key are saved.</li>
-          </ol>
-        </div>
-      </div>
+      <SyncPanel binId={binId} setBinId={setBinId} apiKey={apiKey} setApiKey={setApiKey}
+        syncing={syncing} onPush={syncToCloud} onPull={()=>syncFromCloud(false)}/>
 
       {/* Fee */}
       <div className="panel">
