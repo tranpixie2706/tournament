@@ -85,42 +85,35 @@ function dlCSV(name,rows){
   document.body.removeChild(a);URL.revokeObjectURL(u);
 }
 
-/* ── Google Sheets Sync via JSONP ──
-   Apps Script blocks fetch() from GitHub Pages due to CORS.
-   JSONP (script tag injection) bypasses this completely — no server needed.
+/* ── Google Sheets Sync ──
+   Apps Script returns proper JSON — use fetch with cors mode.
+   Read  → GET  ?action=read          (Apps Script doGet)
+   Write → GET  ?action=write&data=…  (base64 payload, also doGet)
+   Using GET for both avoids POST redirect issues entirely.
 ── */
-function jsonp(url, params){
-  return new Promise((resolve, reject)=>{
-    const cbName = "__egmCb_" + Date.now();
-    const timeout = setTimeout(()=>{
-      cleanup(); reject(new Error("Timeout — check Sheet URL and deployment"));
-    }, 12000);
-    function cleanup(){
-      delete window[cbName];
-      const el = document.getElementById(cbName);
-      if(el) el.remove();
-    }
-    window[cbName] = function(data){
-      clearTimeout(timeout); cleanup(); resolve(data);
-    };
-    const qs = Object.entries({...params, callback: cbName})
-      .map(([k,v])=>k+"="+encodeURIComponent(v)).join("&");
-    const script = document.createElement("script");
-    script.id = cbName;
-    script.src = url + "?" + qs;
-    script.onerror = ()=>{ clearTimeout(timeout); cleanup(); reject(new Error("Script load failed — check Sheet URL")); };
-    document.head.appendChild(script);
-  });
+async function sheetCall(url, params){
+  const qs = Object.entries(params)
+    .map(([k,v]) => k + "=" + encodeURIComponent(v)).join("&");
+  const fullUrl = url + "?" + qs;
+  // Try fetch first
+  try {
+    const res = await fetch(fullUrl, {method:"GET", redirect:"follow"});
+    const text = await res.text();
+    // Strip JSONP wrapper if present: callback({...})
+    const clean = text.replace(/^[^(]+\(/, "").replace(/\);?\s*$/, "").trim();
+    return JSON.parse(clean);
+  } catch(e) {
+    throw new Error("Fetch failed: " + e.message);
+  }
 }
 
 async function sheetRead(url){
-  return jsonp(url, {action:"read"});
+  return sheetCall(url, {action:"read"});
 }
 
 async function sheetWrite(url, payload){
-  // POST data as base64 via JSONP (GET param) — Apps Script decodes it
   const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-  return jsonp(url, {action:"write", data: encoded});
+  return sheetCall(url, {action:"write", data: encoded});
 }
 
 /* ── App ── */
@@ -839,53 +832,52 @@ function getSheet() {
   return ss.getSheetByName('EventData') || ss.insertSheet('EventData');
 }
 
-// JSONP response — wraps data in callback(data) so browser can read it cross-origin
-function jsonpRespond(callback, data) {
-  const json = JSON.stringify(data);
-  const output = callback ? callback + "(" + json + ");" : json;
+function respond(data) {
+  // Return JSON with CORS headers so any website can fetch it
   return ContentService
-    .createTextOutput(output)
-    .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    .createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
+// ALL requests go through doGet (GET method)
+// ?action=read              → return saved data
+// ?action=write&data=BASE64 → decode and save data
 function doGet(e) {
-  const cb = e.parameter.callback || "";
-  const action = e.parameter.action || "read";
+  const action = (e.parameter && e.parameter.action) || "read";
 
   if (action === "read") {
-    const sheet = getSheet();
-    const val = sheet.getRange(1, 1).getValue();
-    if (!val) return jsonpRespond(cb, { ok: false, error: "No data saved yet" });
     try {
+      const sheet = getSheet();
+      const val = sheet.getRange(1, 1).getValue();
+      if (!val) return respond({ ok: false, error: "No data saved yet" });
       const saved = JSON.parse(val);
-      return jsonpRespond(cb, { ok: true, ...saved });
+      return respond({ ok: true, ...saved });
     } catch(err) {
-      return jsonpRespond(cb, { ok: false, error: "Parse error: " + err.message });
+      return respond({ ok: false, error: "Read error: " + err.message });
     }
   }
 
   if (action === "write") {
     try {
-      // Data sent as base64-encoded JSON in ?data= param
-      const decoded = decodeURIComponent(escape(Utilities.newBlob(
-        Utilities.base64Decode(e.parameter.data)).getDataAsString()));
+      const encoded = e.parameter.data;
+      const decoded = decodeURIComponent(escape(
+        Utilities.newBlob(Utilities.base64Decode(encoded)).getDataAsString()
+      ));
       const payload = JSON.parse(decoded);
       const sheet = getSheet();
       sheet.clearContents();
       sheet.getRange(1, 1).setValue(JSON.stringify(payload));
-      return jsonpRespond(cb, { ok: true, timestamp: new Date().toISOString() });
+      return respond({ ok: true, timestamp: new Date().toISOString() });
     } catch(err) {
-      return jsonpRespond(cb, { ok: false, error: err.message });
+      return respond({ ok: false, error: "Write error: " + err.message });
     }
   }
 
-  return jsonpRespond(cb, { ok: false, error: "Unknown action" });
+  return respond({ ok: false, error: "Unknown action: " + action });
 }
 
-// doPost kept as fallback (not used by current app)
-function doPost(e) {
-  return doGet(e);
-}`}</pre>
+// Keep doPost as alias (not used but harmless)
+function doPost(e) { return doGet(e); }`}</pre>
           </div>
         </div>
       </div>
