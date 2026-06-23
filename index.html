@@ -11,9 +11,9 @@
 </head>
 <body><div id="root"></div>
 <script type="text/babel">
-const {useState,useMemo,useRef,useEffect,useCallback}=React;
+const {useState,useMemo,useRef,useEffect}=React;
 
-/* ── Icons ── */
+/* ══ Icons ══ */
 const Ic=({d,size=16})=><svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{d}</svg>;
 const IPlus=({s=16})=><Ic size={s} d={<><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>}/>;
 const ITrash=({s=16})=><Ic size={s} d={<><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3-3h8"/></>}/>;
@@ -33,11 +33,9 @@ const ICheck=({s=16})=><Ic size={s} d={<><path d="M22 11.08V12a10 10 0 1 1-5.93-
 const IGrid=({s=16})=><Ic size={s} d={<><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></>}/>;
 const ITrophy=({s=16})=><Ic size={s} d={<><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></>}/>;
 const ICloud=({s=16})=><Ic size={s} d={<><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></>}/>;
-const ILink=({s=16})=><Ic size={s} d={<><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></>}/>;
-const IFilter=({s=16})=><Ic size={s} d={<><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></>}/>;
 const IRefresh=({s=16})=><Ic size={s} d={<><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></>}/>;
 
-/* ── Constants ── */
+/* ══ Constants ══ */
 const FEE={PAID:"paid",FREE:"free",UNPAID:"unpaid"};
 const ST={NORMAL:"normal",CANCEL:"cancel",WAITING:"waiting"};
 const FEE_LBL={paid:"Paid",free:"Free",unpaid:"Unpaid"};
@@ -45,32 +43,37 @@ const ST_LBL={normal:"Normal",cancel:"Cancelled",waiting:"Waiting"};
 const FEE_CLS={paid:"b-paid",free:"b-free",unpaid:"b-unpaid"};
 const ST_CLS={normal:"b-normal",cancel:"b-cancel",waiting:"b-waiting"};
 
-/* ── LocalStorage keys (fallback when no Sheet) ── */
-const LS={
-  GUESTS:"egm3_guests", ROUNDS:"egm3_rounds", FEE:"egm3_fee",
-  DIR:"egm3_dir", EVENT:"egm3_event",
-  BIN_ID:"egm3_bin_id", API_KEY:"egm3_api_key",
-  FINAL:"egm3_final"
-};
+const RANK_OPTS=[
+  {v:"champion",l:"Champion"},
+  {v:"runner1",l:"Runner-up 1"},
+  {v:"runner2",l:"Runner-up 2"},
+  {v:"place4",l:"4th Place"},
+  {v:"place5",l:"5th Place"},
+  {v:"place6",l:"6th Place"},
+  {v:"place7",l:"7th Place"},
+  {v:"place8",l:"8th Place"},
+  {v:"place9",l:"9th Place"},
+];
+const RANK_SORT={champion:1,runner1:2,runner2:3,place4:4,place5:5,place6:6,place7:7,place8:8,place9:9};
+const RANK_MEDAL={champion:"🥇",runner1:"🥈",runner2:"🥉"};
+
+/* ══ Storage ══ */
+const LS={GUESTS:"egm4_guests",ROUNDS:"egm4_rounds",FEE:"egm4_fee",DIR:"egm4_dir",EVENT:"egm4_event",BIN_ID:"egm4_bin",API_KEY:"egm4_key",FINAL:"egm4_final"};
 function lsGet(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 
-/* ── Helpers ── */
-let _eid=Date.now();
-function uid(){return String(++_eid);}
+/* ══ Helpers ══ */
+let _uid=Date.now();
+function uid(){return String(++_uid);}
 function cx(...a){return a.filter(Boolean).join(" ");}
-function fmtUSD(n){return "$"+Number(n||0).toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:2});}
+function fmtUSD(n){return "$"+Number(n||0).toLocaleString("en-US");}
+function fmtPrize(v){if(!v)return"";const n=Number(String(v).replace(/[^0-9.]/g,""));return isNaN(n)?String(v):"$"+n.toLocaleString("en-US");}
 function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
 
 function sortGuests(guests,rounds){
   const ro={};rounds.forEach((r,i)=>ro[r.id]=i);
   return [...guests].sort((a,b)=>{
-    const rank=g=>{
-      if(g.status==="normal"&&g.round)return 0;
-      if(g.status==="normal"&&!g.round)return 1;
-      if(g.status==="waiting")return 2;
-      return 3;
-    };
+    const rank=g=>g.status==="normal"&&g.round?0:g.status==="normal"?1:g.status==="waiting"?2:3;
     const ra=rank(a),rb=rank(b);
     if(ra!==rb)return ra-rb;
     if(ra===0){const d=(ro[a.round]??99)-(ro[b.round]??99);if(d)return d;}
@@ -86,64 +89,48 @@ function dlCSV(name,rows){
   document.body.removeChild(a);URL.revokeObjectURL(u);
 }
 
-/* ── Cloud Sync via JSONBin.io ──
-   JSONBin is a free REST API with proper CORS — works from any browser.
-   No server needed. Data stored as JSON in a private "bin".
-   Setup: create free account at jsonbin.io, create a bin, paste the Bin ID + API key in Settings.
-── */
-async function syncRead(binId, apiKey){
-  const url = "https://api.jsonbin.io/v3/b/" + binId + "/latest";
-  const res = await fetch(url, {
-    method: "GET",
-    headers: {
-      "X-Master-Key": apiKey,
-      "X-Bin-Meta": "false"
-    }
+/* ══ JSONBin sync ══ */
+async function jbRead(binId,apiKey){
+  const res=await fetch("https://api.jsonbin.io/v3/b/"+binId+"/latest",{
+    method:"GET",headers:{"X-Master-Key":apiKey,"X-Bin-Meta":"false"}
   });
-  if(!res.ok) throw new Error("HTTP " + res.status + " — check Bin ID and API key");
+  if(!res.ok)throw new Error("HTTP "+res.status);
+  return res.json();
+}
+async function jbWrite(binId,apiKey,payload){
+  const res=await fetch("https://api.jsonbin.io/v3/b/"+binId,{
+    method:"PUT",
+    headers:{"Content-Type":"application/json","X-Master-Key":apiKey},
+    body:JSON.stringify(payload)
+  });
+  if(!res.ok)throw new Error("HTTP "+res.status);
   return res.json();
 }
 
-async function syncWrite(binId, apiKey, payload){
-  const url = "https://api.jsonbin.io/v3/b/" + binId;
-  const res = await fetch(url, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Master-Key": apiKey
-    },
-    body: JSON.stringify(payload)
-  });
-  if(!res.ok) throw new Error("HTTP " + res.status + " — check Bin ID and API key");
-  return res.json();
-}
-
-/* ── App ── */
+/* ══════════════════════════════════════
+   APP
+══════════════════════════════════════ */
 function App(){
-  const [guests,setGuests]=useState(()=>lsGet(LS.GUESTS,[]));
-  const [rounds,setRounds]=useState(()=>lsGet(LS.ROUNDS,[{id:"r1",name:"Round 1",limit:20},{id:"r2",name:"Round 2",limit:20}]));
-  const [finalRound,setFinalRound]=useState(()=>lsGet(LS.FINAL,{enabled:false,name:"Final",prizePool:[]}));
-  const [feeAmt,setFeeAmt]=useState(()=>lsGet(LS.FEE,50));
+  const [guests,setGuests]   =useState(()=>lsGet(LS.GUESTS,[]));
+  const [rounds,setRounds]   =useState(()=>lsGet(LS.ROUNDS,[{id:"r1",name:"Round 1",limit:20},{id:"r2",name:"Round 2",limit:20}]));
+  const [final,setFinal]     =useState(()=>lsGet(LS.FINAL,{enabled:false,name:"Final",entries:[]}));
+  const [feeAmt,setFeeAmt]   =useState(()=>lsGet(LS.FEE,50));
   const [eventName,setEventName]=useState(()=>lsGet(LS.EVENT,""));
-  const [binId,setBinId]=useState(()=>lsGet(LS.BIN_ID,""));
-  const [apiKey,setApiKey]=useState(()=>lsGet(LS.API_KEY,""));
-  // Save to localStorage whenever binId or apiKey changes
-  const saveCreds=(bid,ak)=>{lsSet(LS.BIN_ID,bid);lsSet(LS.API_KEY,ak);};
-  const [syncing,setSyncing]=useState(false);
-  const [syncMsg,setSyncMsg]=useState("");
-  const [tab,setTab]=useState("overview");
+  const [binId,setBinId]     =useState(()=>lsGet(LS.BIN_ID,""));
+  const [apiKey,setApiKey]   =useState(()=>lsGet(LS.API_KEY,""));
+  const [syncing,setSyncing] =useState(false);
+  const [syncMsg,setSyncMsg] =useState("");
+  const [tab,setTab]         =useState("overview");
   const [filterTab,setFilterTab]=useState("all");
-  const [search,setSearch]=useState("");
+  const [search,setSearch]   =useState("");
   const [roundSearch,setRoundSearch]=useState("");
   const [showForm,setShowForm]=useState(false);
   const [showBulk,setShowBulk]=useState(false);
-  const [showFinal,setShowFinal]=useState(false);
-  const [editEid,setEditEid]=useState(null);
-  const [formErr,setFormErr]=useState("");
-  const [form,setForm]=useState(ef());
-
-  const dirRef=useRef(lsGet(LS.DIR,[]));
-  const [dirVer,setDirVer]=useState(0);
+  const [editEid,setEditEid] =useState(null);
+  const [formErr,setFormErr] =useState("");
+  const [form,setForm]       =useState(emptyForm());
+  const dirRef               =useRef(lsGet(LS.DIR,[]));
+  const [dirVer,setDirVer]   =useState(0);
 
   /* Persist */
   useEffect(()=>lsSet(LS.GUESTS,guests),[guests]);
@@ -152,48 +139,51 @@ function App(){
   useEffect(()=>lsSet(LS.EVENT,eventName),[eventName]);
   useEffect(()=>lsSet(LS.BIN_ID,binId),[binId]);
   useEffect(()=>lsSet(LS.API_KEY,apiKey),[apiKey]);
-  useEffect(()=>lsSet(LS.FINAL,finalRound),[finalRound]);
+  useEffect(()=>lsSet(LS.FINAL,final),[final]);
 
-  function ef(){return{memberId:"",name:"",tier:"",feeStatus:"unpaid",round:"",status:"normal",note:""};}
+  /* Auto-pull on open */
+  useEffect(()=>{
+    if(binId&&apiKey){
+      jbRead(binId,apiKey).then(data=>{
+        if(data){applyCloud(data);}
+      }).catch(()=>{});
+    }
+  },[]);
+
+  function applyCloud(data){
+    if(data.guests)setGuests(data.guests);
+    if(data.rounds)setRounds(data.rounds);
+    if(data.final)setFinal(data.final);
+    if(data.feeAmt!=null)setFeeAmt(data.feeAmt);
+    if(data.eventName)setEventName(data.eventName);
+  }
+
+  function emptyForm(){return{memberId:"",name:"",tier:"",feeStatus:"unpaid",round:"",status:"normal",note:""};}
 
   const dirMap=useMemo(()=>{
     const m={};dirRef.current.forEach(d=>m[d.id]={name:d.name,tier:d.tier||""});return m;
   },[dirVer]);
 
-  /* Cloud sync via JSONBin */
-  async function syncToCloud(){
-    if(!binId||!apiKey){setSyncMsg("⚠️ No Bin ID / API Key — go to Settings.");return;}
+  /* Sync */
+  async function pushCloud(){
+    if(!binId||!apiKey){setSyncMsg("⚠️ Set Bin ID & API Key in Settings");return;}
     setSyncing(true);setSyncMsg("Saving…");
     try{
-      const payload={eventName,guests,rounds,finalRound,feeAmt,savedAt:new Date().toISOString()};
-      await syncWrite(binId,apiKey,payload);
+      await jbWrite(binId,apiKey,{guests,rounds,final,feeAmt,eventName,savedAt:new Date().toISOString()});
       setSyncMsg("✓ Saved");
     }catch(e){setSyncMsg("✗ "+e.message);}
-    setSyncing(false);
-    setTimeout(()=>setSyncMsg(""),5000);
+    setSyncing(false);setTimeout(()=>setSyncMsg(""),4000);
   }
-
-  async function syncFromCloud(silent){
-    if(!binId||!apiKey)return;
-    if(!silent){setSyncing(true);setSyncMsg("Loading…");}
+  async function pullCloud(){
+    if(!binId||!apiKey){setSyncMsg("⚠️ Set Bin ID & API Key in Settings");return;}
+    setSyncing(true);setSyncMsg("Loading…");
     try{
-      const data=await syncRead(binId,apiKey);
-      if(data){
-        if(data.guests)setGuests(data.guests);
-        if(data.rounds)setRounds(data.rounds);
-        if(data.finalRound)setFinalRound(data.finalRound);
-        if(data.feeAmt!=null)setFeeAmt(data.feeAmt);
-        if(data.eventName)setEventName(data.eventName);
-        if(!silent)setSyncMsg("✓ Loaded — "+new Date(data.savedAt||Date.now()).toLocaleTimeString());
-      }
-    }catch(e){if(!silent)setSyncMsg("✗ "+e.message);}
-    if(!silent){setSyncing(false);setTimeout(()=>setSyncMsg(""),5000);}
+      const data=await jbRead(binId,apiKey);
+      applyCloud(data);
+      setSyncMsg("✓ Loaded");
+    }catch(e){setSyncMsg("✗ "+e.message);}
+    setSyncing(false);setTimeout(()=>setSyncMsg(""),4000);
   }
-
-  // Auto-pull on open
-  useEffect(()=>{
-    if(binId&&apiKey)syncFromCloud(true);
-  },[]);
 
   /* Derived */
   const roundCounts=useMemo(()=>{
@@ -211,26 +201,14 @@ function App(){
     const unassigned=active.filter(g=>!g.round);
     const cancelled=guests.filter(g=>g.status==="cancel");
     const waiting=guests.filter(g=>g.status==="waiting");
-    return{total:guests.length,active:active.length,
-      paid,free,unpaid,assigned,unassigned,cancelled,waiting,
-      collected:paid.length*feeAmt};
+    return{total:guests.length,active:active.length,paid,free,unpaid,assigned,unassigned,cancelled,waiting,collected:paid.length*feeAmt};
   },[guests,feeAmt]);
 
   const sorted=useMemo(()=>sortGuests(guests,rounds),[guests,rounds]);
 
-  const guestsByFilter=useMemo(()=>{
+  const displayed=useMemo(()=>{
     const q=search.trim().toLowerCase();
-    let base;
-    switch(filterTab){
-      case"paid":base=stats.paid;break;
-      case"free":base=stats.free;break;
-      case"unpaid":base=stats.unpaid;break;
-      case"assigned":base=stats.assigned;break;
-      case"unassigned":base=stats.unassigned;break;
-      case"cancelled":base=stats.cancelled;break;
-      case"waiting":base=stats.waiting;break;
-      default:base=sorted;
-    }
+    const base={all:sorted,paid:stats.paid,free:stats.free,unpaid:stats.unpaid,assigned:stats.assigned,unassigned:stats.unassigned,cancelled:stats.cancelled,waiting:stats.waiting}[filterTab]||sorted;
     if(!q)return base;
     return base.filter(g=>g.memberId.toLowerCase().includes(q)||g.name.toLowerCase().includes(q)||(g.note||"").toLowerCase().includes(q));
   },[sorted,stats,filterTab,search]);
@@ -241,17 +219,15 @@ function App(){
     return guests.filter(g=>g.status==="normal"&&g.round&&(g.memberId.toLowerCase().includes(q)||g.name.toLowerCase().includes(q)));
   },[guests,roundSearch]);
 
-  /* Actions */
-  function startAdd(){setForm(ef());setEditEid(null);setFormErr("");setShowForm(true);}
+  /* Guest actions */
+  function startAdd(){setForm(emptyForm());setEditEid(null);setFormErr("");setShowForm(true);}
   function startEdit(g){setForm({memberId:g.memberId,name:g.name,tier:g.tier||"",feeStatus:g.feeStatus,round:g.round,status:g.status,note:g.note});setEditEid(g.eid);setFormErr("");setShowForm(true);}
 
   function roundFull(rid,excl){
     const r=rounds.find(r=>r.id===rid);if(!r)return false;
     return guests.filter(g=>g.round===rid&&g.status==="normal"&&g.eid!==excl).length>=r.limit;
   }
-  function memberInRound(mid,rid,excl){
-    return guests.some(g=>g.memberId===mid&&g.round===rid&&g.status==="normal"&&g.eid!==excl);
-  }
+  function memberInRound(mid,rid,excl){return guests.some(g=>g.memberId===mid&&g.round===rid&&g.status==="normal"&&g.eid!==excl);}
 
   function onIdChange(id){
     const e=dirMap[id.trim()];
@@ -263,12 +239,10 @@ function App(){
     if(!mid)return setFormErr("Enter a Member ID.");
     if(!name)return setFormErr("Enter a name.");
     if(form.status==="normal"&&form.round){
-      if(roundFull(form.round,editEid)){const r=rounds.find(r=>r.id===form.round);return setFormErr(`"${r?.name}" is full.`);}
-      if(memberInRound(mid,form.round,editEid))return setFormErr(`${mid} is already in this round.`);
+      if(roundFull(form.round,editEid)){const r=rounds.find(r=>r.id===form.round);return setFormErr(r.name+" is full.");}
+      if(memberInRound(mid,form.round,editEid))return setFormErr(mid+" is already in this round.");
     }
-    const g={eid:editEid||uid(),memberId:mid,name,tier:form.tier.trim(),
-      feeStatus:form.feeStatus,round:form.status==="normal"?form.round:"",
-      status:form.status,note:form.note.trim()};
+    const g={eid:editEid||uid(),memberId:mid,name,tier:form.tier.trim(),feeStatus:form.feeStatus,round:form.status==="normal"?form.round:"",status:form.status,note:form.note.trim()};
     if(editEid)setGuests(p=>p.map(x=>x.eid===editEid?g:x));
     else setGuests(p=>[...p,g]);
     setShowForm(false);setFormErr("");
@@ -279,8 +253,8 @@ function App(){
   function tryRound(eid,rid){
     const g=guests.find(x=>x.eid===eid);if(!g)return false;
     if(rid){
-      if(roundFull(rid,eid)){const r=rounds.find(r=>r.id===rid);alert(`"${r?.name}" is full.`);return false;}
-      if(memberInRound(g.memberId,rid,eid)){alert(`${g.memberId} already in this round.`);return false;}
+      if(roundFull(rid,eid)){alert(rounds.find(r=>r.id===rid)?.name+" is full.");return false;}
+      if(memberInRound(g.memberId,rid,eid)){alert(g.memberId+" already in this round.");return false;}
     }
     upd(eid,{round:rid,status:"normal"});return true;
   }
@@ -288,39 +262,27 @@ function App(){
 
   function exportCSV(){
     const rn=id=>rounds.find(r=>r.id===id)?.name||"";
-    dlCSV(`${eventName||"event"}-${new Date().toISOString().slice(0,10)}.csv`,
+    dlCSV((eventName||"event")+"-"+new Date().toISOString().slice(0,10)+".csv",
       [["#","Member ID","Name","Tier","Fee","Round","Status","Note"],
        ...sorted.map((g,i)=>[i+1,g.memberId,g.name,g.tier||"",FEE_LBL[g.feeStatus],g.round?rn(g.round):"",ST_LBL[g.status],g.note||""])]);
   }
 
   function bulkAdd(lines){
-    const created=lines.filter(id=>id.trim()).map(rawId=>{
+    setGuests(p=>[...p,...lines.filter(id=>id.trim()).map(rawId=>{
       const id=rawId.trim();const e=dirMap[id];
-      return{eid:uid(),memberId:id,name:e?.name||"(Unknown — edit)",tier:e?.tier||"",feeStatus:"unpaid",round:"",status:"normal",note:""};
-    });
-    setGuests(p=>[...p,...created]);setShowBulk(false);
+      return{eid:uid(),memberId:id,name:e?.name||"(Unknown)",tier:e?.tier||"",feeStatus:"unpaid",round:"",status:"normal",note:""};
+    })]);
+    setShowBulk(false);
   }
 
-  const tp={rounds,onEdit:startEdit,
-    onAssign:tryRound,onStatus:setSt,
-    onFee:(eid,fs)=>upd(eid,{feeStatus:fs})};
+  const tp={rounds,onEdit:startEdit,onAssign:tryRound,onStatus:setSt,onFee:(eid,fs)=>upd(eid,{feeStatus:fs})};
 
-  const FILTER_TABS=[
-    ["all","All",stats.total],
-    ["paid","Paid",stats.paid.length],
-    ["free","Free",stats.free.length],
-    ["unpaid","Unpaid",stats.unpaid.length],
-    ["assigned","Assigned",stats.assigned.length],
-    ["unassigned","Unassigned",stats.unassigned.length],
-    ["cancelled","Cancelled",stats.cancelled.length],
-    ["waiting","Waiting",stats.waiting.length],
-  ];
+  const FTABS=[["all","All",stats.total],["paid","Paid",stats.paid.length],["free","Free",stats.free.length],["unpaid","Unpaid",stats.unpaid.length],["assigned","Assigned",stats.assigned.length],["unassigned","Unassigned",stats.unassigned.length],["cancelled","Cancelled",stats.cancelled.length],["waiting","Waiting",stats.waiting.length]];
 
   return(
     <div className="app">
       <style>{CSS}</style>
 
-      {/* Header */}
       <header className="topbar">
         <div className="brand">
           <div className="bmark">E</div>
@@ -328,14 +290,14 @@ function App(){
             <div className="btitle">{eventName||"Event Guest Manager"}</div>
             <div className="bsub">
               {stats.total} entries · {stats.active} active
-              {syncMsg&&<span className={cx("smsg",syncMsg.startsWith("✓")?"smsg-ok":syncMsg.startsWith("✗")?"smsg-err":"smsg-info")}>{syncMsg}</span>}
+              {syncMsg&&<span className={cx("smsg",syncMsg.startsWith("✓")?"smsg-ok":syncMsg.startsWith("✗")?"smsg-err":"smsg-warn")}>{syncMsg}</span>}
             </div>
           </div>
         </div>
-        <div className="hactions">
+        <div className="hacts">
           {binId&&apiKey&&<>
-            <button className="btn btn-ghost btn-xs" onClick={()=>syncFromCloud(false)} disabled={syncing} title="Pull latest data"><IRefresh s={13}/></button>
-            <button className="btn btn-ghost btn-xs" onClick={syncToCloud} disabled={syncing} title="Push / save data"><ICloud s={13}/></button>
+            <button className="btn btn-ghost btn-xs" onClick={pullCloud} disabled={syncing} title="Pull latest"><IRefresh s={13}/></button>
+            <button className="btn btn-ghost btn-xs" onClick={pushCloud} disabled={syncing} title="Push / save"><ICloud s={13}/></button>
           </>}
           <button className="btn btn-ghost btn-xs" onClick={exportCSV}><IDL s={13}/></button>
           <button className="btn btn-sec btn-xs" onClick={()=>setShowBulk(true)}><IBulk s={13}/> Bulk</button>
@@ -343,7 +305,6 @@ function App(){
         </div>
       </header>
 
-      {/* Nav */}
       <nav className="tabs">
         {[["overview","Overview",<IGrid s={13}/>],["rounds","Rounds",<IUsers s={13}/>],["final","Final",<ITrophy s={13}/>],["settings","Settings",<IGear s={13}/>]].map(([id,lbl,icon])=>(
           <button key={id} className={cx("tab",tab===id&&"tab-on")} onClick={()=>setTab(id)}>{icon}{lbl}</button>
@@ -352,41 +313,36 @@ function App(){
 
       <main className="content">
 
-        {/* ── OVERVIEW ── */}
         {tab==="overview"&&<div className="stack">
-          {/* Stats */}
           <div className="sgrid">
             <SC icon={<IUsers s={17}/>} label="Total" value={stats.total}/>
-            <SC icon={<ICheck s={17}/>} label="Assigned" value={stats.assigned.length} sub={`of ${stats.active}`}/>
-            <SC icon={<IDollar s={17}/>} label="Collected" value={fmtUSD(stats.collected)} sub={`${stats.paid.length} paid`} tone="good"/>
+            <SC icon={<ICheck s={17}/>} label="Assigned" value={stats.assigned.length} sub={"of "+stats.active}/>
+            <SC icon={<IDollar s={17}/>} label="Collected" value={fmtUSD(stats.collected)} sub={stats.paid.length+" paid"} tone="good"/>
             <SC icon={<IDollar s={17}/>} label="Free" value={stats.free.length}/>
             <SC icon={<IAlert s={17}/>} label="Unpaid" value={stats.unpaid.length} tone={stats.unpaid.length>0?"warn":"def"}/>
             <SC icon={<IClock s={17}/>} label="Unassigned" value={stats.unassigned.length} tone={stats.unassigned.length>0?"warn":"def"}/>
             <SC icon={<IBan s={17}/>} label="Cancelled" value={stats.cancelled.length} tone="danger"/>
             <SC icon={<IClock s={17}/>} label="Waiting" value={stats.waiting.length} tone="neutral"/>
           </div>
-
-          {/* Guest list with filter tabs */}
           <div className="panel">
-            <div className="panel-hdr">
+            <div className="panel-hdr" style={{flexDirection:"column",alignItems:"stretch",gap:8}}>
               <div className="ftabs">
-                {FILTER_TABS.map(([id,lbl,cnt])=>(
+                {FTABS.map(([id,lbl,cnt])=>(
                   <button key={id} className={cx("ftab",filterTab===id&&"ftab-on")} onClick={()=>setFilterTab(id)}>
-                    {lbl} <span className="ftab-cnt">{cnt}</span>
+                    {lbl}<span className="ftab-cnt">{cnt}</span>
                   </button>
                 ))}
               </div>
               <div className="sbox">
                 <ISearch s={13}/>
-                <input placeholder="Search…" value={search} onChange={e=>setSearch(e.target.value)}/>
+                <input placeholder="Search ID, name, note…" value={search} onChange={e=>setSearch(e.target.value)}/>
                 {search&&<button className="sclear" onClick={()=>setSearch("")}><IX s={12}/></button>}
               </div>
             </div>
-            <GuestTable guests={guestsByFilter} onDel={delGuest} {...tp}/>
+            <GuestTable guests={displayed} onDel={delGuest} {...tp}/>
           </div>
         </div>}
 
-        {/* ── ROUNDS ── */}
         {tab==="rounds"&&<div className="stack">
           <div className="sbox sbox-wide">
             <ISearch s={13}/>
@@ -398,16 +354,15 @@ function App(){
               <div className="panel-hdr"><h2>Results <span className="dim">({roundSearchRes.length})</span></h2></div>
               <GuestTable guests={roundSearchRes} onDel={()=>{}} hideStatus {...tp}/>
             </div>
-          ):rounds.length===0?<div className="empty">No rounds. Go to Settings.</div>
+          ):rounds.length===0?<div className="empty">No rounds yet. Go to Settings.</div>
           :rounds.map(r=>{
-            const rg=guests.filter(g=>g.status==="normal"&&g.round===r.id)
-              .sort((a,b)=>a.memberId.localeCompare(b.memberId,undefined,{numeric:true}));
-            const cnt=roundCounts[r.id]||0,full=cnt>=r.limit;
+            const rg=guests.filter(g=>g.status==="normal"&&g.round===r.id).sort((a,b)=>a.memberId.localeCompare(b.memberId,undefined,{numeric:true}));
+            const cnt=roundCounts[r.id]||0;
             return(
               <div className="panel" key={r.id}>
                 <div className="panel-hdr">
                   <h2>{r.name} <span className="dim">({cnt}/{r.limit})</span></h2>
-                  {full&&<span className="badge b-unpaid">Full</span>}
+                  {cnt>=r.limit&&<span className="badge b-unpaid">Full</span>}
                 </div>
                 <GuestTable guests={rg} onDel={()=>{}} hideRound hideStatus {...tp}/>
               </div>
@@ -415,28 +370,29 @@ function App(){
           })}
         </div>}
 
-        {/* ── FINAL ── */}
-        {tab==="final"&&<FinalTab finalRound={finalRound} setFinalRound={setFinalRound} guests={guests} rounds={rounds}/>}
+        {tab==="final"&&<FinalTab final={final} setFinal={setFinal} guests={guests}/>}
 
-        {/* ── SETTINGS ── */}
         {tab==="settings"&&<SettingsTab
           rounds={rounds} setRounds={setRounds}
           feeAmt={feeAmt} setFeeAmt={setFeeAmt}
           eventName={eventName} setEventName={setEventName}
-          binId={binId} setBinId={setBinId} apiKey={apiKey} setApiKey={setApiKey}
+          binId={binId} setBinId={setBinId}
+          apiKey={apiKey} setApiKey={setApiKey}
+          syncing={syncing} onPush={pushCloud} onPull={pullCloud}
           roundCounts={roundCounts}
           dirRef={dirRef} dirVer={dirVer} setDirVer={setDirVer}
         />}
       </main>
 
       {showForm&&<GuestModal form={form} setForm={setForm} rounds={rounds} err={formErr}
-        isEdit={!!editEid} onClose={()=>{setShowForm(false);setFormErr("");}} onSave={saveGuest} onIdChange={onIdChange}/>}
+        isEdit={!!editEid} onClose={()=>{setShowForm(false);setFormErr("");}}
+        onSave={saveGuest} onIdChange={onIdChange}/>}
       {showBulk&&<BulkModal onClose={()=>setShowBulk(false)} onSubmit={bulkAdd} dirMap={dirMap}/>}
     </div>
   );
 }
 
-/* ── StatCard ── */
+/* ══ StatCard ══ */
 function SC({icon,label,value,sub,tone="def"}){
   return(
     <div className={cx("sc","sc-"+tone)}>
@@ -448,28 +404,24 @@ function SC({icon,label,value,sub,tone="def"}){
   );
 }
 
-/* ── Popover (mobile-friendly bottom sheet on small screens) ── */
-function Pop({anchor,onClose,children}){
+/* ══ Popover ══ */
+function Pop({anchorRef,onClose,children}){
   const ref=useRef(null);
-  const isMobile=window.innerWidth<600;
+  const mobile=window.innerWidth<600;
   useEffect(()=>{
-    const fn=e=>{
-      if(!isMobile&&ref.current&&!ref.current.contains(e.target)&&!anchor?.current?.contains(e.target))onClose();
-    };
+    if(mobile)return;
+    const fn=e=>{if(ref.current&&!ref.current.contains(e.target)&&!anchorRef?.current?.contains(e.target))onClose();};
     document.addEventListener("mousedown",fn);
     return()=>document.removeEventListener("mousedown",fn);
   },[onClose]);
-
-  if(isMobile){
-    return(
-      <div className="pop-overlay" onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}}>
-        <div className="pop-sheet" ref={ref}>
-          <div className="pop-handle"/>
-          {children}
-        </div>
+  if(mobile)return(
+    <div className="pop-ov" onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="pop-sheet" ref={ref}>
+        <div className="pop-handle"/>
+        {children}
       </div>
-    );
-  }
+    </div>
+  );
   return <div className="pop-drop" ref={ref}>{children}</div>;
 }
 
@@ -478,8 +430,8 @@ function FeeBadge({g,onFee}){
   return(
     <div className="bc" ref={ref}>
       <button className={cx("badge",FEE_CLS[g.feeStatus],"bb")} onClick={()=>setOpen(o=>!o)}>{FEE_LBL[g.feeStatus]}</button>
-      {open&&<Pop anchor={ref} onClose={()=>setOpen(false)}>
-        <div className="pop-title">Fee status</div>
+      {open&&<Pop anchorRef={ref} onClose={()=>setOpen(false)}>
+        <div className="pop-ttl">Fee status</div>
         {Object.values(FEE).map(fs=>(
           <button key={fs} className={cx("pi",g.feeStatus===fs&&"pi-on")} onClick={()=>{onFee(g.eid,fs);setOpen(false);}}>
             <span className={cx("badge",FEE_CLS[fs])}>{FEE_LBL[fs]}</span>
@@ -496,11 +448,11 @@ function RoundBadge({g,rounds,onAssign}){
   return(
     <div className="bc" ref={ref}>
       <button className={cx("badge",g.round?"b-rnd":"b-unassigned","bb")} disabled={g.status!=="normal"}
-        onClick={()=>g.status==="normal"&&setOpen(o=>!o)} title={g.status!=="normal"?"Restore to Normal first":""}>
+        onClick={()=>g.status==="normal"&&setOpen(o=>!o)}>
         {g.round?rn(g.round):"—"}
       </button>
-      {open&&<Pop anchor={ref} onClose={()=>setOpen(false)}>
-        <div className="pop-title">Assign round</div>
+      {open&&<Pop anchorRef={ref} onClose={()=>setOpen(false)}>
+        <div className="pop-ttl">Assign round</div>
         <button className={cx("pi",!g.round&&"pi-on")} onClick={()=>{onAssign(g.eid,"");setOpen(false);}}>Unassigned</button>
         {rounds.map(r=>(
           <button key={r.id} className={cx("pi",g.round===r.id&&"pi-on")} onClick={()=>{if(onAssign(g.eid,r.id))setOpen(false);}}>
@@ -517,8 +469,8 @@ function StBadge({g,onStatus}){
   return(
     <div className="bc" ref={ref}>
       <button className={cx("badge",ST_CLS[g.status],"bb")} onClick={()=>setOpen(o=>!o)}>{ST_LBL[g.status]}</button>
-      {open&&<Pop anchor={ref} onClose={()=>setOpen(false)}>
-        <div className="pop-title">Status</div>
+      {open&&<Pop anchorRef={ref} onClose={()=>setOpen(false)}>
+        <div className="pop-ttl">Status</div>
         {Object.values(ST).map(s=>(
           <button key={s} className={cx("pi",g.status===s&&"pi-on")} onClick={()=>{onStatus(g.eid,s);setOpen(false);}}>
             <span className={cx("badge",ST_CLS[s])}>{ST_LBL[s]}</span>
@@ -529,7 +481,7 @@ function StBadge({g,onStatus}){
   );
 }
 
-/* ── Guest Table ── */
+/* ══ GuestTable ══ */
 function GuestTable({guests,rounds,onEdit,onDel,onAssign,onStatus,onFee,hideRound,hideStatus}){
   if(!guests.length)return <div className="empty">No entries.</div>;
   return(
@@ -563,66 +515,29 @@ function GuestTable({guests,rounds,onEdit,onDel,onAssign,onStatus,onFee,hideRoun
   );
 }
 
-/* ── Final Tab ── */
-const RANK_OPTIONS=[
-  {value:"champion",  label:"🥇 Champion"},
-  {value:"runner1",   label:"🥈 Runner-up 1"},
-  {value:"runner2",   label:"🥉 Runner-up 2"},
-  {value:"place4",    label:"4th Place"},
-  {value:"place5",    label:"5th Place"},
-  {value:"place6",    label:"6th Place"},
-  {value:"place7",    label:"7th Place"},
-  {value:"place8",    label:"8th Place"},
-  {value:"place9",    label:"9th Place"},
-];
-const RANK_SORT={champion:1,runner1:2,runner2:3,place4:4,place5:5,place6:6,place7:7,place8:8,place9:9};
-const RANK_MEDAL={champion:"🥇",runner1:"🥈",runner2:"🥉"};
-const RANK_DISPLAY={champion:"Champion",runner1:"Runner-up 1",runner2:"Runner-up 2",place4:"4th Place",place5:"5th Place",place6:"6th Place",place7:"7th Place",place8:"8th Place",place9:"9th Place"};
-
-function fmtPrize(v){
-  if(!v&&v!==0)return"";
-  const n=Number(String(v).replace(/[^0-9.]/g,""));
-  if(isNaN(n))return String(v);
-  return"$"+n.toLocaleString("en-US");
-}
-
-function FinalTab({finalRound,setFinalRound,guests}){
-  // entries: [{id, memberId, name(auto), rank, prize}]
-  const entries=finalRound.entries||[];
-  const [newMbId,setNewMbId]=useState("");
+/* ══ Final Tab ══ */
+function FinalTab({final,setFinal,guests}){
+  const [newMb,setNewMb]=useState("");
   const [newRank,setNewRank]=useState("champion");
   const [newPrize,setNewPrize]=useState("");
-  const [addErr,setAddErr]=useState("");
+  const [err,setErr]=useState("");
 
-  // auto-fill name from guests list or directory
-  function resolveName(mbId){
-    const g=guests.find(x=>x.memberId===mbId.trim()&&x.status==="normal");
-    return g?g.name:"";
-  }
+  const entries=final.entries||[];
+  const usedRanks=new Set(entries.map(e=>e.rank));
 
-  function toggleEnabled(){setFinalRound(f=>({...f,enabled:!f.enabled}));}
+  function resolveName(id){return guests.find(g=>g.memberId===id.trim()&&g.status==="normal")?.name||"";}
 
   function addEntry(){
-    const mbId=newMbId.trim();
-    if(!mbId)return setAddErr("Enter a Member ID.");
-    if(entries.some(e=>e.rank===newRank))return setAddErr(`${RANK_DISPLAY[newRank]} already assigned.`);
-    const name=resolveName(mbId);
-    const entry={id:uid(),memberId:mbId,name,rank:newRank,prize:newPrize.trim()};
-    setFinalRound(f=>({...f,entries:[...(f.entries||[]),entry]}));
-    setNewMbId("");setNewPrize("");setAddErr("");
+    const mb=newMb.trim();
+    if(!mb)return setErr("Enter a Member ID.");
+    if(usedRanks.has(newRank))return setErr(RANK_OPTS.find(o=>o.v===newRank)?.l+" already assigned.");
+    setFinal(f=>({...f,entries:[...(f.entries||[]),{id:uid(),memberId:mb,name:resolveName(mb),rank:newRank,prize:newPrize.trim()}]}));
+    setNewMb("");setNewPrize("");setErr("");
   }
-
-  function updEntry(id,patch){
-    setFinalRound(f=>({...f,entries:(f.entries||[]).map(e=>e.id===id?{...e,...patch}:e)}));
-  }
-
-  function delEntry(id){
-    setFinalRound(f=>({...f,entries:(f.entries||[]).filter(e=>e.id!==id)}));
-  }
+  function updEntry(id,patch){setFinal(f=>({...f,entries:(f.entries||[]).map(e=>e.id===id?{...e,...patch}:e)}));}
+  function delEntry(id){setFinal(f=>({...f,entries:(f.entries||[]).filter(e=>e.id!==id)}));}
 
   const sorted=[...entries].sort((a,b)=>(RANK_SORT[a.rank]||99)-(RANK_SORT[b.rank]||99));
-  const usedRanks=new Set(entries.map(e=>e.rank));
-  const availableRanks=RANK_OPTIONS.filter(o=>!usedRanks.has(o.value)||o.value===newRank);
 
   return(
     <div className="stack">
@@ -630,114 +545,78 @@ function FinalTab({finalRound,setFinalRound,guests}){
         <div className="panel-hdr">
           <h2><ITrophy s={15}/> Final Round</h2>
           <label className="toggle">
-            <input type="checkbox" checked={!!finalRound.enabled} onChange={toggleEnabled}/>
-            <span className="toggle-slider"/>
-            <span className="toggle-lbl">{finalRound.enabled?"Active":"Disabled"}</span>
+            <input type="checkbox" checked={!!final.enabled} onChange={()=>setFinal(f=>({...f,enabled:!f.enabled}))}/>
+            <span className="tslider"/><span className="tlbl">{final.enabled?"Active":"Disabled"}</span>
           </label>
         </div>
-
-        {!finalRound.enabled&&<p className="hint">Enable Final Round to record rankings and prize winners.</p>}
-
-        {finalRound.enabled&&<>
-          {/* Add entry form */}
+        {!final.enabled&&<p className="hint">Enable to record rankings and prizes.</p>}
+        {final.enabled&&<>
           <div className="panel-section">
-            <div className="section-hdr"><span>Add result</span></div>
-            {addErr&&<div className="ferr ferr-sm"><IAlert s={13}/>{addErr}</div>}
+            <div className="sec-hdr"><span>Add result</span></div>
+            {err&&<div className="ferr ferr-sm"><IAlert s={13}/>{err}</div>}
             <div className="final-form">
-              <div className="final-field">
+              <div className="field">
                 <label>Member ID</label>
-                <input className="input" placeholder="MB001" value={newMbId}
-                  onChange={e=>{setNewMbId(e.target.value);setAddErr("");}}
-                  onBlur={e=>{
-                    const name=resolveName(e.target.value);
-                    if(name)setAddErr("");
-                  }}
-                />
-                {newMbId&&resolveName(newMbId)&&(
-                  <div className="autofill-name">{resolveName(newMbId)}</div>
-                )}
+                <input className="input" value={newMb} placeholder="MB001"
+                  onChange={e=>{setNewMb(e.target.value);setErr("");}}/>
+                {newMb&&resolveName(newMb)&&<div className="autofill">{resolveName(newMb)}</div>}
               </div>
-              <div className="final-field">
+              <div className="field">
                 <label>Rank</label>
                 <select className="input" value={newRank} onChange={e=>setNewRank(e.target.value)}>
-                  {RANK_OPTIONS.map(o=>(
-                    <option key={o.value} value={o.value} disabled={usedRanks.has(o.value)}>
-                      {o.label}{usedRanks.has(o.value)?" (taken)":""}
+                  {RANK_OPTS.map(o=>(
+                    <option key={o.v} value={o.v} disabled={usedRanks.has(o.v)}>
+                      {o.v==="champion"?"🥇":o.v==="runner1"?"🥈":o.v==="runner2"?"🥉":"  "} {o.l}{usedRanks.has(o.v)?" ✓":""}
                     </option>
                   ))}
                 </select>
               </div>
-              <div className="final-field">
+              <div className="field">
                 <label>Prize (USD)</label>
-                <div className="fee-wrap">
-                  <span className="fee-pre">$</span>
-                  <input className="input fee-inp" placeholder="10,000" value={newPrize}
-                    onChange={e=>setNewPrize(e.target.value)}/>
-                </div>
+                <div className="fee-wrap"><span className="fee-pre">$</span><input className="input fee-inp" placeholder="10,000" value={newPrize} onChange={e=>setNewPrize(e.target.value)}/></div>
               </div>
-              <button className="btn btn-pri btn-xs final-add-btn" onClick={addEntry}>
-                <IPlus s={13}/> Add
-              </button>
+              <button className="btn btn-pri btn-xs" style={{alignSelf:"flex-end"}} onClick={addEntry}><IPlus s={13}/> Add</button>
             </div>
           </div>
 
-          {/* Results board */}
-          <div className="panel-section">
-            <div className="section-hdr"><span>Results board</span></div>
-            {sorted.length===0&&<p className="hint">No results yet. Add winners above.</p>}
-            {sorted.map(e=>(
-              <div className="final-result-row" key={e.id}>
-                {/* Rank medal + label */}
-                <div className="frr-rank">
-                  <span className="frr-medal">{RANK_MEDAL[e.rank]||<span className="frr-num">#{RANK_SORT[e.rank]}</span>}</span>
-                  <span className="frr-rank-lbl">{RANK_DISPLAY[e.rank]}</span>
-                </div>
-
-                {/* MB# */}
-                <div className="frr-id">
-                  <label>MB#</label>
-                  <input className="input frr-input" value={e.memberId}
-                    onChange={ev=>updEntry(e.id,{memberId:ev.target.value,name:resolveName(ev.target.value)||e.name})}/>
-                </div>
-
-                {/* Name (auto or manual) */}
-                <div className="frr-name">
-                  <label>Name</label>
-                  <input className="input frr-input" value={e.name}
-                    onChange={ev=>updEntry(e.id,{name:ev.target.value})}
-                    placeholder="Auto-filled"/>
-                </div>
-
-                {/* Prize */}
-                <div className="frr-prize">
-                  <label>Prize</label>
-                  <div className="fee-wrap">
-                    <span className="fee-pre">$</span>
-                    <input className="input fee-inp" value={e.prize}
-                      onChange={ev=>updEntry(e.id,{prize:ev.target.value})}
-                      placeholder="10,000"/>
-                  </div>
-                </div>
-
-                <button className="ib ib-d" onClick={()=>delEntry(e.id)}><ITrash s={13}/></button>
-              </div>
-            ))}
-          </div>
-
-          {/* Display card — final summary */}
-          {sorted.length>0&&(
+          {sorted.length>0&&<>
             <div className="panel-section">
-              <div className="section-hdr"><span>Prize presentation</span></div>
+              <div className="sec-hdr"><span>Results</span></div>
+              {sorted.map(e=>(
+                <div className="frr" key={e.id}>
+                  <div className="frr-rank">
+                    <span className="frr-medal">{RANK_MEDAL[e.rank]||"#"+(RANK_SORT[e.rank]||"")}</span>
+                    <span className="frr-rlbl">{RANK_OPTS.find(o=>o.v===e.rank)?.l}</span>
+                  </div>
+                  <div className="field" style={{flex:1,minWidth:90}}>
+                    <label>MB#</label>
+                    <input className="input" value={e.memberId} onChange={ev=>updEntry(e.id,{memberId:ev.target.value,name:resolveName(ev.target.value)||e.name})}/>
+                  </div>
+                  <div className="field" style={{flex:2,minWidth:120}}>
+                    <label>Name</label>
+                    <input className="input" value={e.name} placeholder="Auto-filled" onChange={ev=>updEntry(e.id,{name:ev.target.value})}/>
+                  </div>
+                  <div className="field" style={{minWidth:100}}>
+                    <label>Prize</label>
+                    <div className="fee-wrap"><span className="fee-pre">$</span><input className="input fee-inp" value={e.prize} onChange={ev=>updEntry(e.id,{prize:ev.target.value})}/></div>
+                  </div>
+                  <button className="ib ib-d" style={{alignSelf:"flex-end",marginBottom:2}} onClick={()=>delEntry(e.id)}><ITrash s={13}/></button>
+                </div>
+              ))}
+            </div>
+
+            <div className="panel-section">
+              <div className="sec-hdr"><span>Prize board</span></div>
               <div className="prize-card">
-                <div className="prize-card-title">{finalRound.name||"Final Results"}</div>
+                <div className="prize-card-title">{final.name||"Final Results"}</div>
                 {sorted.map(e=>(
-                  <div className="prize-card-row" key={e.id}>
+                  <div className="pcr" key={e.id}>
                     <div className="pcr-left">
                       <span className="pcr-medal">{RANK_MEDAL[e.rank]||""}</span>
-                      <div className="pcr-info">
-                        <span className="pcr-mb">{e.memberId}</span>
-                        <span className="pcr-name">{e.name||"—"}</span>
-                        <span className="pcr-rank-lbl">{RANK_DISPLAY[e.rank]}</span>
+                      <div>
+                        <div className="pcr-mb">{e.memberId}</div>
+                        <div className="pcr-name">{e.name||"—"}</div>
+                        <div className="pcr-rank">{RANK_OPTS.find(o=>o.v===e.rank)?.l}</div>
                       </div>
                     </div>
                     {e.prize&&<div className="pcr-prize">{fmtPrize(e.prize)}</div>}
@@ -745,102 +624,26 @@ function FinalTab({finalRound,setFinalRound,guests}){
                 ))}
               </div>
             </div>
-          )}
+          </>}
         </>}
       </div>
     </div>
   );
 }
 
-/* ── Sync Panel (stable — uses local state to avoid re-render wipe) ── */
-function SyncPanel({binId,setBinId,apiKey,setApiKey,syncing,onPush,onPull}){
-  // Use local state so typing doesn't trigger parent re-render
-  const [localBin, setLocalBin] = useState(binId||"");
-  const [localKey, setLocalKey] = useState(apiKey||"");
-  const [saved, setSaved]       = useState(!!(binId&&apiKey));
-
-  function handleSave(){
-    const b = localBin.trim();
-    const k = localKey.trim();
-    if(!b||!k){ alert("Enter both Bin ID and API Key."); return; }
-    setBinId(b);
-    setApiKey(k);
-    lsSet(LS.BIN_ID, b);
-    lsSet(LS.API_KEY, k);
-    setSaved(true);
-  }
-
-  return(
-    <div className="panel">
-      <div className="panel-hdr"><h2><ICloud s={14}/> Cloud sync (JSONBin)</h2></div>
-      <p className="hint">
-        Free sync across desktop &amp; mobile via <strong>jsonbin.io</strong>.
-        {" "}<a href="#jb-guide" style={{color:"var(--acc)"}}>Setup guide ↓</a>
-      </p>
-
-      <div style={{padding:"0 13px 13px",display:"flex",flexDirection:"column",gap:10}}>
-        <div className="field">
-          <label>Bin ID</label>
-          <input className="input" value={localBin}
-            onChange={e=>{ setLocalBin(e.target.value); setSaved(false); }}
-            placeholder="6a3a03a4da38895dfeef4942"
-            autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="false"/>
-        </div>
-        <div className="field">
-          <label>API Key (Master Key)</label>
-          <input className="input" value={localKey}
-            onChange={e=>{ setLocalKey(e.target.value); setSaved(false); }}
-            placeholder="Paste Master Key here"
-            autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="false"/>
-        </div>
-
-        <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-          {!saved&&(
-            <button className="btn btn-pri btn-xs" onClick={handleSave}>
-              <ISave s={13}/> Save credentials
-            </button>
-          )}
-          {saved&&<>
-            <span style={{fontSize:11.5,color:"var(--good)",fontWeight:600}}>✓ Credentials saved</span>
-            <button className="btn btn-sec btn-xs" onClick={onPull} disabled={syncing}>
-              <IRefresh s={13}/> Pull latest
-            </button>
-            <button className="btn btn-pri btn-xs" onClick={onPush} disabled={syncing}>
-              <ICloud s={13}/> Push / save
-            </button>
-            <button className="btn btn-ghost btn-xs" onClick={()=>setSaved(false)}>Edit</button>
-          </>}
-        </div>
-
-        {saved&&<div style={{fontSize:11,color:"var(--ink-s)"}}>
-          Bin: <code style={{background:"var(--neu-s)",padding:"1px 5px",borderRadius:4}}>{localBin.slice(0,10)}…</code>
-          {" "}Key: <code style={{background:"var(--neu-s)",padding:"1px 5px",borderRadius:4}}>{localKey.slice(0,8)}…</code>
-        </div>}
-      </div>
-
-      <div className="sheet-guide" id="jb-guide">
-        <div className="guide-title">📋 Setup (one-time, ~2 min)</div>
-        <ol className="guide-steps">
-          <li>Go to <a href="https://jsonbin.io" target="_blank" style={{color:"var(--acc)"}}>jsonbin.io</a> → Sign Up (free).</li>
-          <li>Top menu → <strong>API Keys</strong> → copy your <strong>Secret Key</strong> → paste into <em>API Key</em> above.</li>
-          <li>Top menu → <strong>Bins → Create Bin</strong> → paste <code style={{background:"var(--neu-s)",padding:"1px 4px",borderRadius:3}}>{"{"+"}"}</code> as content → Save → copy <strong>Bin ID</strong> from URL → paste above.</li>
-          <li>Click <strong>Save credentials</strong>, then <strong>Push / save</strong> to upload data.</li>
-          <li>On mobile: open app → Settings → enter same Bin ID + API Key → Save → Pull latest.</li>
-        </ol>
-      </div>
-    </div>
-  );
-}
-
-/* ── Settings Tab ── */
+/* ══ Settings Tab ══ */
 const DPAGE=50;
-function SettingsTab({rounds,setRounds,feeAmt,setFeeAmt,eventName,setEventName,binId,setBinId,apiKey,setApiKey,roundCounts,dirRef,dirVer,setDirVer}){
+function SettingsTab({rounds,setRounds,feeAmt,setFeeAmt,eventName,setEventName,binId,setBinId,apiKey,setApiKey,syncing,onPush,onPull,roundCounts,dirRef,dirVer,setDirVer}){
   const [df,setDf]=useState({id:"",name:"",tier:""});
   const [dfErr,setDfErr]=useState("");
   const [bulk,setBulk]=useState("");
   const [dsearch,setDsearch]=useState("");
   const [dpage,setDpage]=useState(0);
   const dbSearch=useRef(debounce(v=>{setDsearch(v);setDpage(0);},250));
+  /* local cred state so typing doesn't re-render parent */
+  const [lBin,setLBin]=useState(binId||"");
+  const [lKey,setLKey]=useState(apiKey||"");
+  const [credSaved,setCredSaved]=useState(!!(binId&&apiKey));
 
   const dir=dirRef.current;
   const dirFilt=useMemo(()=>{
@@ -851,10 +654,18 @@ function SettingsTab({rounds,setRounds,feeAmt,setFeeAmt,eventName,setEventName,b
   const dItems=useMemo(()=>dirFilt.slice(dpage*DPAGE,(dpage+1)*DPAGE),[dirFilt,dpage]);
   const dPages=Math.ceil(dirFilt.length/DPAGE);
 
+  function saveCreds(){
+    const b=lBin.trim(),k=lKey.trim();
+    if(!b||!k){alert("Enter both Bin ID and API Key.");return;}
+    setBinId(b);setApiKey(k);
+    lsSet(LS.BIN_ID,b);lsSet(LS.API_KEY,k);
+    setCredSaved(true);
+  }
+
   function addEntry(){
     const id=df.id.trim(),name=df.name.trim();
     if(!id||!name)return setDfErr("Enter ID and name.");
-    if(dir.some(d=>d.id===id))return setDfErr(`"${id}" already exists.`);
+    if(dir.some(d=>d.id===id))return setDfErr(id+" already exists.");
     dirRef.current=[...dir,{id,name,tier:df.tier.trim()}];
     lsSet(LS.DIR,dirRef.current);setDirVer(v=>v+1);
     setDf({id:"",name:"",tier:""});setDfErr("");
@@ -869,44 +680,76 @@ function SettingsTab({rounds,setRounds,feeAmt,setFeeAmt,eventName,setEventName,b
     });
     if(adds.length){dirRef.current=[...dir,...adds];lsSet(LS.DIR,dirRef.current);setDirVer(v=>v+1);setBulk("");}
   }
-  function addRound(){setRounds(p=>[...p,{id:"r_"+Date.now().toString(36).slice(-5),name:`Round ${p.length+1}`,limit:20}]);}
+  function addRound(){setRounds(p=>[...p,{id:"r_"+Date.now().toString(36).slice(-5),name:"Round "+(p.length+1),limit:20}]);}
   function updRName(id,v){setRounds(p=>p.map(r=>r.id===id?{...r,name:v}:r));}
   function updRLim(id,v){setRounds(p=>p.map(r=>r.id===id?{...r,limit:Math.max(0,v)}:r));}
-  function delRound(id){
-    if(guests&&guests.some(g=>g.round===id&&g.status==="normal"))return alert("Round has guests. Move them first.");
-    setRounds(p=>p.filter(r=>r.id!==id));
-  }
-  function clearAll(){
-    if(confirm("Delete ALL data permanently?")){{Object.values(LS).forEach(k=>localStorage.removeItem(k));window.location.reload();}}
-  }
+  function delRound(id){setRounds(p=>p.filter(r=>r.id!==id));}
+  function clearAll(){if(confirm("Delete ALL data?")){{Object.values(LS).forEach(k=>localStorage.removeItem(k));window.location.reload();}}}
 
   return(
     <div className="stack">
-      {/* Event info */}
+      {/* Event */}
       <div className="panel">
         <div className="panel-hdr"><h2>Event</h2></div>
-        <div className="settings-row">
+        <div className="srow">
           <label>Event name</label>
           <input className="input" value={eventName} onChange={e=>setEventName(e.target.value)} placeholder="e.g. Poker Night June 2025" style={{maxWidth:260}}/>
         </div>
-        <p className="hint">Shown in the header and used as the CSV filename.</p>
+        <p className="hint">Used in the header and CSV filename.</p>
       </div>
 
       {/* Sync */}
-      <SyncPanel binId={binId} setBinId={setBinId} apiKey={apiKey} setApiKey={setApiKey}
-        syncing={syncing} onPush={syncToCloud} onPull={()=>syncFromCloud(false)}/>
+      <div className="panel">
+        <div className="panel-hdr"><h2><ICloud s={14}/> Cloud sync (JSONBin)</h2></div>
+        <p className="hint">Sync across devices using <strong>jsonbin.io</strong> (free). <a href="#jbguide" style={{color:"var(--acc)"}}>Setup guide ↓</a></p>
+        <div style={{padding:"0 13px 13px",display:"flex",flexDirection:"column",gap:10}}>
+          <div className="field">
+            <label>Bin ID</label>
+            <input className="input" value={lBin} onChange={e=>{setLBin(e.target.value);setCredSaved(false);}}
+              placeholder="6a3a03a4da38895dfeef4942"
+              autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="false"/>
+          </div>
+          <div className="field">
+            <label>API Key (Master Key)</label>
+            <input className="input" value={lKey} onChange={e=>{setLKey(e.target.value);setCredSaved(false);}}
+              placeholder="Paste Master Key here"
+              autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="false"/>
+          </div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+            {!credSaved
+              ? <button className="btn btn-pri btn-xs" onClick={saveCreds}><ISave s={13}/> Save credentials</button>
+              : <>
+                  <span style={{fontSize:12,color:"var(--good)",fontWeight:600}}>✓ Credentials saved</span>
+                  <button className="btn btn-sec btn-xs" onClick={onPull} disabled={syncing}><IRefresh s={13}/> Pull</button>
+                  <button className="btn btn-pri btn-xs" onClick={onPush} disabled={syncing}><ICloud s={13}/> Push</button>
+                  <button className="btn btn-ghost btn-xs" onClick={()=>setCredSaved(false)}>Edit</button>
+                </>
+            }
+          </div>
+          {credSaved&&<div style={{fontSize:11,color:"var(--ink-s)"}}>
+            Bin: <code style={{background:"var(--neu-s)",padding:"1px 5px",borderRadius:4}}>{lBin.slice(0,10)}…</code>
+          </div>}
+        </div>
+        <div className="sheet-guide" id="jbguide">
+          <div className="guide-title">📋 Setup (one-time, ~2 min)</div>
+          <ol className="guide-steps">
+            <li>Go to <a href="https://jsonbin.io" target="_blank" style={{color:"var(--acc)"}}>jsonbin.io</a> → Sign Up (free).</li>
+            <li>Top menu → <strong>API Keys</strong> → copy <strong>Secret Key</strong> → paste into API Key above.</li>
+            <li>Top menu → <strong>Bins → Create Bin</strong> → enter any valid JSON (e.g. a number like 1) → Save → copy <strong>Bin ID</strong> from URL → paste above.</li>
+            <li>Click <strong>Save credentials</strong> then <strong>Push</strong> to upload data.</li>
+            <li>On mobile: same Bin ID + API Key → Save → Pull.</li>
+          </ol>
+        </div>
+      </div>
 
       {/* Fee */}
       <div className="panel">
         <div className="panel-hdr"><h2>Registration fee</h2></div>
-        <div className="settings-row">
+        <div className="srow">
           <label>Fee per entry (USD)</label>
-          <div className="fee-wrap">
-            <span className="fee-pre">$</span>
-            <input type="number" className="input fee-inp" value={feeAmt} min={0} step={1} onChange={e=>setFeeAmt(Number(e.target.value)||0)}/>
-          </div>
+          <div className="fee-wrap"><span className="fee-pre">$</span><input type="number" className="input fee-inp" value={feeAmt} min={0} step={1} onChange={e=>setFeeAmt(Number(e.target.value)||0)}/></div>
         </div>
-        <p className="hint">Total collected = Paid entries × this fee.</p>
+        <p className="hint">Total collected = Paid entries × fee.</p>
       </div>
 
       {/* Rounds */}
@@ -928,7 +771,7 @@ function SettingsTab({rounds,setRounds,feeAmt,setFeeAmt,eventName,setEventName,b
       {/* Directory */}
       <div className="panel">
         <div className="panel-hdr"><h2>Member directory <span className="dim">({dir.length})</span></h2></div>
-        <p className="hint">ID → Name + Tier. Auto-fills when adding guests by ID.</p>
+        <p className="hint">ID → Name + Tier. Auto-fills when adding guests.</p>
         <div className="dir-add">
           {dfErr&&<div className="ferr ferr-sm"><IAlert s={13}/>{dfErr}</div>}
           <div className="dir-fields">
@@ -939,9 +782,8 @@ function SettingsTab({rounds,setRounds,feeAmt,setFeeAmt,eventName,setEventName,b
           </div>
         </div>
         <div className="dir-bulk">
-          <div className="bulk-lbl">Bulk import — <code>ID, Name, Tier</code> per line (Tier optional)</div>
-          <textarea className="input" rows={3} value={bulk} onChange={e=>setBulk(e.target.value)}
-            placeholder={"MB001, Nguyen Van A, Gold\nMB002, Tran Thi B"}/>
+          <div className="bulk-lbl">Bulk import — <code>ID, Name, Tier</code> per line</div>
+          <textarea className="input" rows={3} value={bulk} onChange={e=>setBulk(e.target.value)} placeholder={"MB001, Nguyen Van A, Gold\nMB002, Tran Thi B"}/>
           <button className="btn btn-sec btn-xs" style={{alignSelf:"flex-start"}} onClick={importBulk} disabled={!bulk.trim()}><IBulk s={13}/> Import</button>
         </div>
         <div className="dir-search">
@@ -970,9 +812,9 @@ function SettingsTab({rounds,setRounds,feeAmt,setFeeAmt,eventName,setEventName,b
       </div>
 
       {/* Danger */}
-      <div className="panel panel-danger">
+      <div className="panel" style={{borderColor:"#f0cfcc"}}>
         <div className="panel-hdr"><h2 style={{color:"var(--danger)"}}>Danger zone</h2></div>
-        <div className="settings-row">
+        <div className="srow">
           <div><div style={{fontWeight:600,fontSize:13}}>Clear all data</div><div className="dim" style={{fontSize:12}}>Permanently delete everything.</div></div>
           <button className="btn btn-xs" style={{background:"var(--danger)",color:"#fff"}} onClick={clearAll}>Clear all</button>
         </div>
@@ -981,30 +823,21 @@ function SettingsTab({rounds,setRounds,feeAmt,setFeeAmt,eventName,setEventName,b
   );
 }
 
-/* ── Guest Modal ── */
+/* ══ Guest Modal ══ */
 function GuestModal({form,setForm,rounds,err,isEdit,onClose,onSave,onIdChange}){
   return(
     <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
       <div className="modal">
-        <div className="modal-hdr">
-          <h3>{isEdit?"Edit entry":"Add guest"}</h3>
-          <button className="ib" onClick={onClose}><IX s={16}/></button>
-        </div>
+        <div className="modal-hdr"><h3>{isEdit?"Edit entry":"Add guest"}</h3><button className="ib" onClick={onClose}><IX s={16}/></button></div>
         <div className="modal-body">
           {err&&<div className="ferr"><IAlert s={13}/>{err}</div>}
           <div className="fgrid">
-            <div className="field"><label>Member ID *</label>
-              <input className="input" value={form.memberId} disabled={isEdit} onChange={e=>onIdChange(e.target.value)} placeholder="MB001"/>
-            </div>
-            <div className="field"><label>Name *</label>
-              <input className="input" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Auto-filled"/>
-            </div>
-            <div className="field"><label>Tier</label>
-              <input className="input" value={form.tier} onChange={e=>setForm({...form,tier:e.target.value})} placeholder="Auto-filled"/>
-            </div>
+            <div className="field"><label>Member ID *</label><input className="input" value={form.memberId} disabled={isEdit} onChange={e=>onIdChange(e.target.value)} placeholder="MB001"/></div>
+            <div className="field"><label>Name *</label><input className="input" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Auto-filled"/></div>
+            <div className="field"><label>Tier</label><input className="input" value={form.tier} onChange={e=>setForm({...form,tier:e.target.value})}/></div>
             <div className="field"><label>Fee</label>
               <select className="input" value={form.feeStatus} onChange={e=>setForm({...form,feeStatus:e.target.value})}>
-                <option value="paid">✓ Paid</option><option value="free">◎ Free</option><option value="unpaid">✗ Unpaid</option>
+                <option value="paid">Paid</option><option value="free">Free</option><option value="unpaid">Unpaid</option>
               </select>
             </div>
             <div className="field"><label>Status</label>
@@ -1018,21 +851,19 @@ function GuestModal({form,setForm,rounds,err,isEdit,onClose,onSave,onIdChange}){
                 {rounds.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
               </select>
             </div>
-            <div className="field field-full"><label>Note</label>
-              <textarea className="input" rows={2} value={form.note} onChange={e=>setForm({...form,note:e.target.value})} placeholder="Re-join reason, note…"/>
-            </div>
+            <div className="field field-full"><label>Note</label><textarea className="input" rows={2} value={form.note} onChange={e=>setForm({...form,note:e.target.value})} placeholder="Re-join reason, note…"/></div>
           </div>
         </div>
         <div className="modal-ftr">
           <button className="btn btn-ghost btn-xs" onClick={onClose}>Cancel</button>
-          <button className="btn btn-pri btn-xs" onClick={onSave}><ISave s={13}/>{isEdit?"Save":"Add guest"}</button>
+          <button className="btn btn-pri btn-xs" onClick={onSave}><ISave s={13}/>{isEdit?"Save":"Add"}</button>
         </div>
       </div>
     </div>
   );
 }
 
-/* ── Bulk Modal ── */
+/* ══ Bulk Modal ══ */
 function BulkModal({onClose,onSubmit,dirMap}){
   const [text,setText]=useState("");
   const lines=text.split(/[\n,]/).map(l=>l.trim()).filter(Boolean);
@@ -1042,10 +873,8 @@ function BulkModal({onClose,onSubmit,dirMap}){
       <div className="modal">
         <div className="modal-hdr"><h3>Bulk add</h3><button className="ib" onClick={onClose}><IX s={16}/></button></div>
         <div className="modal-body">
-          <div className="field"><label>Paste IDs — one per line or comma-separated</label>
-            <textarea className="input" rows={6} autoFocus value={text} onChange={e=>setText(e.target.value)} placeholder={"MB001\nMB002\nMB003"}/>
-          </div>
-          <p className="hint">{lines.length} ID(s). Names/Tiers auto-filled. Same ID can appear multiple times (re-join). All start Normal/Unpaid/Unassigned.</p>
+          <div className="field"><label>Paste IDs — one per line</label><textarea className="input" rows={6} autoFocus value={text} onChange={e=>setText(e.target.value)} placeholder={"MB001\nMB002\nMB003"}/></div>
+          <p className="hint">{lines.length} IDs. Names auto-filled from directory. Same ID can appear multiple times (re-join).</p>
           {prev.length>0&&<div className="bprev">
             {prev.map((id,i)=>(
               <div className="brow" key={i}>
@@ -1066,7 +895,7 @@ function BulkModal({onClose,onSubmit,dirMap}){
   );
 }
 
-/* ══ CSS ══ */
+/* ══════════════ CSS ══════════════ */
 const CSS=`
 :root{
   --ink:#1a1918;--ink-s:#58534e;
@@ -1082,30 +911,22 @@ const CSS=`
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 .app{background:var(--paper);color:var(--ink);min-height:100vh;font-size:14px;line-height:1.5;}
-
-/* ── topbar ── */
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line);background:var(--card);gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:20;}
 .brand{display:flex;align-items:center;gap:10px;min-width:0;}
 .bmark{width:30px;height:30px;border-radius:7px;background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:700;font-size:15px;flex-shrink:0;}
-.btitle{font-weight:700;font-size:13.5px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;}
+.btitle{font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;}
 .bsub{font-size:11px;color:var(--ink-s);display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
 .smsg{font-size:10.5px;padding:1px 7px;border-radius:999px;font-weight:600;}
 .smsg-ok{background:var(--good-s);color:var(--good);}
 .smsg-err{background:var(--danger-s);color:var(--danger);}
-.smsg-info{background:var(--neu-s);color:var(--neutral);}
-.hactions{display:flex;gap:5px;flex-shrink:0;}
-
-/* ── tabs ── */
+.smsg-warn{background:var(--warn-s);color:var(--warn);}
+.hacts{display:flex;gap:5px;flex-shrink:0;}
 .tabs{display:flex;background:var(--card);border-bottom:1px solid var(--line);overflow-x:auto;position:sticky;top:57px;z-index:19;}
 .tab{display:flex;align-items:center;gap:4px;background:none;border:none;padding:10px 13px;font-size:12.5px;font-weight:600;color:var(--ink-s);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-family:inherit;}
 .tab:hover{color:var(--ink);}
 .tab-on{color:var(--acc);border-bottom-color:var(--acc);}
-
-/* ── content ── */
 .content{padding:14px;max-width:900px;margin:0 auto;}
 .stack{display:flex;flex-direction:column;gap:12px;}
-
-/* ── stat grid ── */
 .sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
 @media(max-width:560px){.sgrid{grid-template-columns:repeat(2,1fr);}}
 .sc{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:11px 13px;}
@@ -1114,32 +935,23 @@ const CSS=`
 .sc-warn .sc-icon{background:var(--warn-s);color:var(--warn);}
 .sc-danger .sc-icon{background:var(--danger-s);color:var(--danger);}
 .sc-neutral .sc-icon{background:var(--neu-s);color:var(--neutral);}
-.sc-val{font-size:17px;font-weight:700;letter-spacing:-.01em;}
+.sc-val{font-size:17px;font-weight:700;}
 .sc-lbl{font-size:10.5px;color:var(--ink-s);margin-top:1px;}
 .sc-sub{font-size:10px;color:var(--ink-s);margin-top:2px;}
-
-/* ── panel ── */
 .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:visible;}
-.panel-danger{border-color:#f0cfcc;}
 .panel-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;border-bottom:1px solid var(--line);gap:8px;flex-wrap:wrap;}
 .panel-hdr h2{font-size:13px;font-weight:700;margin:0;display:flex;align-items:center;gap:6px;}
 .panel-section{border-top:1px solid var(--line);padding:12px 13px;}
-.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-size:12px;font-weight:700;color:var(--ink-s);}
-
-/* ── filter tabs ── */
-.ftabs{display:flex;gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch;flex:1;min-width:0;}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-size:12px;font-weight:700;color:var(--ink-s);}
+.ftabs{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .ftab{background:none;border:none;padding:8px 10px;font-size:11.5px;font-weight:600;color:var(--ink-s);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;font-family:inherit;}
 .ftab:hover{color:var(--ink);}
 .ftab-on{color:var(--acc);border-bottom-color:var(--acc);}
 .ftab-cnt{background:var(--neu-s);color:var(--ink-s);font-size:10px;padding:0 5px;border-radius:999px;margin-left:3px;}
-
-/* ── search ── */
 .sbox{display:flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:7px 10px;color:var(--ink-s);}
 .sbox input{border:none;background:none;outline:none;font-size:13px;color:var(--ink);flex:1;min-width:0;font-family:inherit;}
-.sbox-wide{padding:10px 13px;font-size:13.5px;}
+.sbox-wide{padding:10px 13px;}
 .sclear{background:none;border:none;cursor:pointer;color:var(--ink-s);display:flex;padding:0;}
-
-/* ── table ── */
 .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .tbl{width:100%;border-collapse:collapse;font-size:12.5px;}
 .tbl th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-s);padding:8px 11px;border-bottom:1px solid var(--line);background:var(--paper);white-space:nowrap;}
@@ -1151,8 +963,6 @@ const CSS=`
 .notec{color:var(--ink-s);max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .actc{display:flex;gap:3px;justify-content:flex-end;}
 .dim{color:#aaa9a5;}
-
-/* ── badges ── */
 .badge{display:inline-flex;align-items:center;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;}
 .b-paid{background:var(--good-s);color:var(--good);}
 .b-free{background:#dde4f5;color:#2d4492;}
@@ -1163,32 +973,20 @@ const CSS=`
 .b-rnd{background:var(--neu-s);color:var(--ink-s);}
 .b-unassigned{background:var(--paper);color:#ccc8c3;border:1px dashed var(--line);}
 .tbadge{font-size:10.5px;font-weight:700;color:var(--acc);background:var(--acc-s);padding:1px 7px;border-radius:999px;}
-
-/* ── click-to-edit badges ── */
 .bc{position:relative;display:inline-block;}
 .bb{border:none;cursor:pointer;font-family:inherit;border-radius:999px;padding:2px 8px;font-size:10.5px;font-weight:700;}
 .bb:disabled{cursor:not-allowed;opacity:.65;}
-.bb:not(:disabled):hover{filter:brightness(.91);box-shadow:0 0 0 2px rgba(0,0,0,.07);}
-
-/* ── popover dropdown (desktop) ── */
-.pop-drop{position:absolute;top:calc(100% + 5px);left:0;z-index:40;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.14);padding:6px;min-width:150px;display:flex;flex-direction:column;gap:2px;}
-
-/* ── popover bottom sheet (mobile) ── */
-.pop-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;display:flex;align-items:flex-end;}
+.bb:not(:disabled):hover{filter:brightness(.91);}
+.pop-ov{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;display:flex;align-items:flex-end;}
 .pop-sheet{background:var(--card);border-radius:16px 16px 0 0;width:100%;padding:0 0 24px;max-height:60vh;overflow-y:auto;}
 .pop-handle{width:36px;height:4px;background:var(--line);border-radius:2px;margin:10px auto 8px;}
-.pop-title{font-size:11px;font-weight:700;color:var(--ink-s);text-transform:uppercase;letter-spacing:.06em;padding:6px 14px 4px;}
-
-/* ── popover items ── */
+.pop-ttl{font-size:11px;font-weight:700;color:var(--ink-s);text-transform:uppercase;letter-spacing:.06em;padding:6px 14px 4px;}
+.pop-drop{position:absolute;top:calc(100% + 5px);left:0;z-index:40;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.14);padding:6px;min-width:150px;display:flex;flex-direction:column;gap:2px;}
 .pi{display:flex;align-items:center;gap:8px;background:none;border:none;text-align:left;padding:10px 14px;cursor:pointer;font-size:13px;font-weight:600;color:var(--ink);width:100%;font-family:inherit;}
 .pi:hover{background:var(--paper);}
 .pi-on{background:var(--acc-s);}
-
-/* ── misc ── */
 .empty{padding:22px;text-align:center;color:var(--ink-s);font-size:12.5px;}
 .hint{font-size:11.5px;color:var(--ink-s);padding:0 13px 11px;margin:0;}
-
-/* ── buttons ── */
 .btn{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;padding:8px 13px;border-radius:8px;border:1px solid transparent;cursor:pointer;white-space:nowrap;font-family:inherit;transition:filter .12s;}
 .btn-xs{padding:6px 11px;font-size:12px;}
 .btn:hover{filter:brightness(.95);}
@@ -1199,13 +997,11 @@ const CSS=`
 .ib{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:var(--card);border-radius:7px;cursor:pointer;color:var(--ink-s);}
 .ib:hover{background:var(--neu-s);color:var(--ink);}
 .ib-d:hover{background:var(--danger-s);color:var(--danger);border-color:var(--danger-s);}
-
-/* ── settings ── */
-.settings-row{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;gap:10px;flex-wrap:wrap;}
-.settings-row label{font-size:12.5px;font-weight:600;color:var(--ink-s);}
+.srow{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;gap:10px;flex-wrap:wrap;}
+.srow label{font-size:12.5px;font-weight:600;color:var(--ink-s);}
 .fee-wrap{display:flex;align-items:stretch;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:var(--paper);}
 .fee-pre{padding:0 8px;color:var(--ink-s);font-weight:700;font-size:14px;background:var(--neu-s);display:flex;align-items:center;border-right:1px solid var(--line);}
-.fee-inp{border:none!important;border-radius:0!important;width:110px;}
+.fee-inp{border:none!important;border-radius:0!important;width:100px;}
 .rlist{display:flex;flex-direction:column;}
 .rrow{display:flex;align-items:center;gap:8px;padding:10px 13px;border-bottom:1px solid var(--line);flex-wrap:wrap;}
 .rrow:last-child{border-bottom:none;}
@@ -1219,48 +1015,13 @@ const CSS=`
 .dir-fields .input{flex:1;min-width:100px;}
 .dir-bulk{padding:0 13px 13px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:6px;}
 .bulk-lbl{font-size:11px;font-weight:700;color:var(--ink-s);}
-.bulk-lbl code{background:var(--neu-s);padding:1px 5px;border-radius:4px;font-size:10.5px;}
+.bulk-lbl code,.dir-bulk code{background:var(--neu-s);padding:1px 5px;border-radius:4px;font-size:10.5px;}
 .dir-search{display:flex;align-items:center;gap:8px;padding:9px 13px;border-bottom:1px solid var(--line);}
 .pagination{display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 13px;border-top:1px solid var(--line);}
-
-/* ── Google Sheet guide ── */
-.sheet-guide{margin:0 13px 13px;border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:var(--paper);}
-.guide-title{font-size:12.5px;font-weight:700;margin-bottom:8px;}
-.guide-steps{margin:0 0 10px 0;padding-left:18px;font-size:12px;color:var(--ink-s);display:flex;flex-direction:column;gap:5px;}
-.guide-steps a{color:var(--acc);}
-.guide-steps code{background:var(--neu-s);padding:1px 5px;border-radius:4px;font-size:11px;}
-.code-block{background:#1e1e1e;border-radius:7px;padding:12px;overflow-x:auto;}
-.code-block pre{margin:0;font-size:10.5px;color:#d4d4d4;font-family:ui-monospace,'SF Mono',Consolas,monospace;line-height:1.6;white-space:pre;}
-
-/* ── final round ── */
-.toggle{display:flex;align-items:center;gap:8px;cursor:pointer;}
-.toggle input{display:none;}
-.toggle-slider{width:36px;height:20px;background:var(--line);border-radius:10px;position:relative;transition:background .2s;}
-.toggle-slider::after{content:"";position:absolute;width:16px;height:16px;background:#fff;border-radius:50%;top:2px;left:2px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
-.toggle input:checked+.toggle-slider{background:var(--acc);}
-.toggle input:checked+.toggle-slider::after{transform:translateX(16px);}
-.toggle-lbl{font-size:12px;font-weight:600;color:var(--ink-s);}
-.prize-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px dashed var(--line);flex-wrap:wrap;}
-.prize-rank{font-size:12px;font-weight:700;color:var(--ink-s);min-width:24px;}
-.winner-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);flex-wrap:wrap;}
-.winner-row:last-child{border-bottom:none;}
-.winner-rank{display:flex;align-items:center;gap:8px;min-width:140px;}
-.rank-medal{font-size:18px;}
-.rank-label{font-size:12px;font-weight:700;}
-.rank-amt{font-size:11px;color:var(--ink-s);}
-.winner-select{flex:1;min-width:180px;}
-.winner-badge{display:flex;align-items:center;gap:6px;}
-.result-list{display:flex;flex-direction:column;gap:8px;}
-.result-row{display:flex;align-items:center;gap:8px;font-size:13px;}
-.prize-amt{font-size:11.5px;font-weight:700;color:var(--good);background:var(--good-s);padding:1px 8px;border-radius:999px;margin-left:auto;}
-
-/* ── input ── */
 .input{font-size:13.5px;padding:8px 10px;border-radius:7px;border:1px solid var(--line);background:var(--paper);color:var(--ink);width:100%;outline:none;font-family:inherit;}
 .input:focus{border-color:var(--acc);}
 .input:disabled{opacity:.55;cursor:not-allowed;}
-@media(max-width:480px){.input{font-size:16px;}} /* prevent iOS zoom */
-
-/* ── modal ── */
+@media(max-width:480px){.input{font-size:16px;}}
 .overlay{position:fixed;inset:0;background:rgba(20,18,16,.5);display:flex;align-items:flex-end;z-index:50;}
 @media(min-width:560px){.overlay{align-items:center;padding:16px;}}
 .modal{background:var(--card);border-radius:16px 16px 0 0;width:100%;max-width:480px;max-height:92vh;overflow-y:auto;box-shadow:0 -4px 40px rgba(0,0,0,.2);}
@@ -1276,11 +1037,37 @@ const CSS=`
 .field-full{grid-column:1/-1;}
 .field label{font-size:11px;font-weight:700;color:var(--ink-s);}
 .modal-ftr{display:flex;justify-content:flex-end;gap:7px;padding:11px 15px;border-top:1px solid var(--line);}
-
-/* ── bulk preview ── */
 .bprev{border:1px solid var(--line);border-radius:8px;padding:7px 10px;margin-top:4px;display:flex;flex-direction:column;gap:3px;max-height:140px;overflow-y:auto;}
 .brow{display:flex;align-items:center;gap:8px;font-size:11.5px;}
-.bname{flex:1;}
+.sheet-guide{margin:0 13px 13px;border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:var(--paper);}
+.guide-title{font-size:12.5px;font-weight:700;margin-bottom:8px;}
+.guide-steps{margin:0 0 0 0;padding-left:18px;font-size:12px;color:var(--ink-s);display:flex;flex-direction:column;gap:5px;}
+.guide-steps a{color:var(--acc);}
+.guide-steps code{background:var(--neu-s);padding:1px 4px;border-radius:3px;font-size:11px;}
+.toggle{display:flex;align-items:center;gap:8px;cursor:pointer;}
+.toggle input{display:none;}
+.tslider{width:36px;height:20px;background:var(--line);border-radius:10px;position:relative;transition:background .2s;}
+.tslider::after{content:"";position:absolute;width:16px;height:16px;background:#fff;border-radius:50%;top:2px;left:2px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.toggle input:checked+.tslider{background:var(--acc);}
+.toggle input:checked+.tslider::after{transform:translateX(16px);}
+.tlbl{font-size:12px;font-weight:600;color:var(--ink-s);}
+.final-form{display:flex;flex-direction:column;gap:10px;}
+@media(min-width:560px){.final-form{flex-direction:row;align-items:flex-start;flex-wrap:wrap;}}
+.autofill{font-size:11px;color:var(--good);margin-top:2px;font-weight:600;}
+.frr{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);flex-wrap:wrap;}
+.frr:last-child{border-bottom:none;}
+.frr-rank{display:flex;align-items:center;gap:6px;min-width:130px;padding-top:20px;}
+.frr-medal{font-size:20px;}
+.frr-rlbl{font-size:12px;font-weight:700;color:var(--ink-s);}
+.prize-card{background:linear-gradient(135deg,#1a1410,#2d1f0e);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px;}
+.prize-card-title{color:#f0d090;font-size:13px;font-weight:700;text-align:center;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px;}
+.pcr{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;background:rgba(255,255,255,.07);border-radius:7px;}
+.pcr-left{display:flex;align-items:center;gap:10px;}
+.pcr-medal{font-size:22px;}
+.pcr-mb{font-size:11px;color:#aaa;font-family:ui-monospace,monospace;}
+.pcr-name{font-size:13px;font-weight:700;color:#fff;}
+.pcr-rank{font-size:10.5px;color:#c8a86b;font-weight:600;}
+.pcr-prize{font-size:15px;font-weight:700;color:#f0d090;white-space:nowrap;}
 `;
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
