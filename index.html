@@ -407,21 +407,34 @@ function SC({icon,label,value,sub,tone="def"}){
 /* ══ Popover ══ */
 function Pop({anchorRef,onClose,children}){
   const ref=useRef(null);
-  const mobile=window.innerWidth<600;
+  const [mobile,setMobile]=useState(()=>window.innerWidth<640);
   useEffect(()=>{
-    if(mobile)return;
+    const chk=()=>setMobile(window.innerWidth<640);
+    window.addEventListener("resize",chk);
+    return()=>window.removeEventListener("resize",chk);
+  },[]);
+  useEffect(()=>{
+    if(mobile)return; // desktop only: close on outside click
     const fn=e=>{if(ref.current&&!ref.current.contains(e.target)&&!anchorRef?.current?.contains(e.target))onClose();};
     document.addEventListener("mousedown",fn);
     return()=>document.removeEventListener("mousedown",fn);
-  },[onClose]);
-  if(mobile)return(
-    <div className="pop-ov" onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div className="pop-sheet" ref={ref}>
-        <div className="pop-handle"/>
-        {children}
+  },[onClose,mobile]);
+
+  if(mobile){
+    // Full-screen overlay + bottom sheet — always visible, nothing cut off
+    return(
+      <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",zIndex:999,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}
+        onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}}>
+        <div ref={ref} style={{background:"#fff",borderRadius:"18px 18px 0 0",paddingBottom:"env(safe-area-inset-bottom,16px)",maxHeight:"70vh",overflowY:"auto"}}>
+          <div style={{width:36,height:4,background:"#ddd",borderRadius:2,margin:"12px auto 6px"}}/>
+          {children}
+          <button onClick={onClose} style={{display:"block",width:"calc(100% - 28px)",margin:"8px 14px 4px",padding:"13px",background:"#f3e1d4",color:"#b55327",border:"none",borderRadius:10,fontSize:15,fontWeight:700,fontFamily:"inherit",cursor:"pointer"}}>
+            Cancel
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
   return <div className="pop-drop" ref={ref}>{children}</div>;
 }
 
@@ -515,32 +528,57 @@ function GuestTable({guests,rounds,onEdit,onDel,onAssign,onStatus,onFee,hideRoun
   );
 }
 
-/* ══ Final Tab ══ */
+/* ══ Final Tab ══
+   Phase 1 (Setup): define prize table — RANK + PRIZE per row, saved in final.prizeSetup
+   Phase 2 (Entry): each row shows RANK+PRIZE (read-only) + MB# input only
+══ */
 function FinalTab({final,setFinal,guests}){
-  const [newMb,setNewMb]=useState("");
+  const prizeSetup = final.prizeSetup || [];   // [{rank, prize}]  — configured once
+  const results    = final.results    || {};    // {rank: {memberId, name}}
+  const [editSetup,setEditSetup]=useState(false);
   const [newRank,setNewRank]=useState("champion");
   const [newPrize,setNewPrize]=useState("");
-  const [err,setErr]=useState("");
+  const [setupErr,setSetupErr]=useState("");
 
-  const entries=final.entries||[];
-  const usedRanks=new Set(entries.map(e=>e.rank));
+  function resolveGuest(id){return guests.find(g=>g.memberId===id.trim()&&g.status==="normal")||null;}
+  function resolveName(id){return resolveGuest(id)?.name||"";}
+  function resolveTier(id){return resolveGuest(id)?.tier||"";}
 
-  function resolveName(id){return guests.find(g=>g.memberId===id.trim()&&g.status==="normal")?.name||"";}
-
-  function addEntry(){
-    const mb=newMb.trim();
-    if(!mb)return setErr("Enter a Member ID.");
-    if(usedRanks.has(newRank))return setErr(RANK_OPTS.find(o=>o.v===newRank)?.l+" already assigned.");
-    setFinal(f=>({...f,entries:[...(f.entries||[]),{id:uid(),memberId:mb,name:resolveName(mb),rank:newRank,prize:newPrize.trim()}]}));
-    setNewMb("");setNewPrize("");setErr("");
+  // ── Setup phase: add a rank+prize row ──
+  const usedSetupRanks=new Set(prizeSetup.map(p=>p.rank));
+  function addPrizeRow(){
+    if(usedSetupRanks.has(newRank))return setSetupErr(RANK_OPTS.find(o=>o.v===newRank)?.l+" already added.");
+    setFinal(f=>({...f,prizeSetup:[...(f.prizeSetup||[]),{rank:newRank,prize:newPrize.trim()}]}));
+    // find next unused rank
+    const next=RANK_OPTS.find(o=>!usedSetupRanks.has(o.v)&&o.v!==newRank);
+    setNewRank(next?.v||"champion");
+    setNewPrize("");setSetupErr("");
   }
-  function updEntry(id,patch){setFinal(f=>({...f,entries:(f.entries||[]).map(e=>e.id===id?{...e,...patch}:e)}));}
-  function delEntry(id){setFinal(f=>({...f,entries:(f.entries||[]).filter(e=>e.id!==id)}));}
+  function delPrizeRow(rank){
+    setFinal(f=>({
+      ...f,
+      prizeSetup:(f.prizeSetup||[]).filter(p=>p.rank!==rank),
+      results:Object.fromEntries(Object.entries(f.results||{}).filter(([r])=>r!==rank))
+    }));
+  }
+  function updPrize(rank,prize){
+    setFinal(f=>({...f,prizeSetup:(f.prizeSetup||[]).map(p=>p.rank===rank?{...p,prize}:p)}));
+  }
 
-  const sorted=[...entries].sort((a,b)=>(RANK_SORT[a.rank]||99)-(RANK_SORT[b.rank]||99));
+  // ── Entry phase: assign MB# to each rank ──
+  function setMb(rank,mbId){
+    const name=resolveName(mbId);
+    setFinal(f=>({...f,results:{...(f.results||{}),[rank]:{memberId:mbId,name}}}));
+  }
+
+  const sortedSetup=[...prizeSetup].sort((a,b)=>(RANK_SORT[a.rank]||99)-(RANK_SORT[b.rank]||99));
+
+  const MEDAL={champion:"🥇",runner1:"🥈",runner2:"🥉"};
+  const rankLabel=v=>RANK_OPTS.find(o=>o.v===v)?.l||v;
 
   return(
     <div className="stack">
+      {/* Toggle */}
       <div className="panel">
         <div className="panel-hdr">
           <h2><ITrophy s={15}/> Final Round</h2>
@@ -549,84 +587,145 @@ function FinalTab({final,setFinal,guests}){
             <span className="tslider"/><span className="tlbl">{final.enabled?"Active":"Disabled"}</span>
           </label>
         </div>
-        {!final.enabled&&<p className="hint">Enable to record rankings and prizes.</p>}
-        {final.enabled&&<>
-          <div className="panel-section">
-            <div className="sec-hdr"><span>Add result</span></div>
-            {err&&<div className="ferr ferr-sm"><IAlert s={13}/>{err}</div>}
-            <div className="final-form">
-              <div className="field">
-                <label>Member ID</label>
-                <input className="input" value={newMb} placeholder="MB001"
-                  onChange={e=>{setNewMb(e.target.value);setErr("");}}/>
-                {newMb&&resolveName(newMb)&&<div className="autofill">{resolveName(newMb)}</div>}
-              </div>
-              <div className="field">
-                <label>Rank</label>
-                <select className="input" value={newRank} onChange={e=>setNewRank(e.target.value)}>
-                  {RANK_OPTS.map(o=>(
-                    <option key={o.v} value={o.v} disabled={usedRanks.has(o.v)}>
-                      {o.v==="champion"?"🥇":o.v==="runner1"?"🥈":o.v==="runner2"?"🥉":"  "} {o.l}{usedRanks.has(o.v)?" ✓":""}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="field">
-                <label>Prize (USD)</label>
-                <div className="fee-wrap"><span className="fee-pre">$</span><input className="input fee-inp" placeholder="10,000" value={newPrize} onChange={e=>setNewPrize(e.target.value)}/></div>
-              </div>
-              <button className="btn btn-pri btn-xs" style={{alignSelf:"flex-end"}} onClick={addEntry}><IPlus s={13}/> Add</button>
-            </div>
+        {!final.enabled&&<p className="hint">Enable to configure prize table and record results.</p>}
+      </div>
+
+      {final.enabled&&<>
+
+        {/* ── PHASE 1: Prize Setup ── */}
+        <div className="panel">
+          <div className="panel-hdr">
+            <h2>Prize setup</h2>
+            <button className="btn btn-ghost btn-xs" onClick={()=>setEditSetup(e=>!e)}>
+              {editSetup?"Done editing":"Edit"}
+            </button>
           </div>
 
-          {sorted.length>0&&<>
-            <div className="panel-section">
-              <div className="sec-hdr"><span>Results</span></div>
-              {sorted.map(e=>(
-                <div className="frr" key={e.id}>
-                  <div className="frr-rank">
-                    <span className="frr-medal">{RANK_MEDAL[e.rank]||"#"+(RANK_SORT[e.rank]||"")}</span>
-                    <span className="frr-rlbl">{RANK_OPTS.find(o=>o.v===e.rank)?.l}</span>
-                  </div>
-                  <div className="field" style={{flex:1,minWidth:90}}>
-                    <label>MB#</label>
-                    <input className="input" value={e.memberId} onChange={ev=>updEntry(e.id,{memberId:ev.target.value,name:resolveName(ev.target.value)||e.name})}/>
-                  </div>
-                  <div className="field" style={{flex:2,minWidth:120}}>
-                    <label>Name</label>
-                    <input className="input" value={e.name} placeholder="Auto-filled" onChange={ev=>updEntry(e.id,{name:ev.target.value})}/>
-                  </div>
-                  <div className="field" style={{minWidth:100}}>
-                    <label>Prize</label>
-                    <div className="fee-wrap"><span className="fee-pre">$</span><input className="input fee-inp" value={e.prize} onChange={ev=>updEntry(e.id,{prize:ev.target.value})}/></div>
-                  </div>
-                  <button className="ib ib-d" style={{alignSelf:"flex-end",marginBottom:2}} onClick={()=>delEntry(e.id)}><ITrash s={13}/></button>
-                </div>
-              ))}
-            </div>
+          {/* Table header */}
+          <div className="fsetup-hdr">
+            <div className="fsetup-col-rank">FINAL RESULT</div>
+            <div className="fsetup-col-prize">PRIZE</div>
+          </div>
 
-            <div className="panel-section">
-              <div className="sec-hdr"><span>Prize board</span></div>
-              <div className="prize-card">
-                <div className="prize-card-title">{final.name||"Final Results"}</div>
-                {sorted.map(e=>(
-                  <div className="pcr" key={e.id}>
-                    <div className="pcr-left">
-                      <span className="pcr-medal">{RANK_MEDAL[e.rank]||""}</span>
-                      <div>
-                        <div className="pcr-mb">{e.memberId}</div>
-                        <div className="pcr-name">{e.name||"—"}</div>
-                        <div className="pcr-rank">{RANK_OPTS.find(o=>o.v===e.rank)?.l}</div>
-                      </div>
+          {sortedSetup.length===0&&!editSetup&&(
+            <p className="hint">No prizes set up yet. Click "Edit" to add ranks and prizes.</p>
+          )}
+
+          {sortedSetup.map(p=>(
+            <div className="fsetup-row" key={p.rank}>
+              <div className="fsetup-col-rank">
+                <span className="fsetup-medal">{MEDAL[p.rank]||""}</span>
+                <span className="fsetup-rank-lbl">{rankLabel(p.rank)}</span>
+              </div>
+              <div className="fsetup-col-prize">
+                {editSetup
+                  ? <div className="fee-wrap" style={{width:130}}>
+                      <span className="fee-pre">$</span>
+                      <input className="input fee-inp" value={p.prize} onChange={e=>updPrize(p.rank,e.target.value)} style={{width:90}}/>
                     </div>
-                    {e.prize&&<div className="pcr-prize">{fmtPrize(e.prize)}</div>}
-                  </div>
-                ))}
+                  : <span className="fsetup-prize-lbl">{p.prize?"$"+Number(String(p.prize).replace(/[^0-9.]/g,"")).toLocaleString("en-US"):""}</span>
+                }
+              </div>
+              {editSetup&&<button className="ib ib-d" onClick={()=>delPrizeRow(p.rank)}><ITrash s={12}/></button>}
+            </div>
+          ))}
+
+          {editSetup&&(
+            <div className="fsetup-add">
+              {setupErr&&<div className="ferr ferr-sm"><IAlert s={12}/>{setupErr}</div>}
+              <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"flex-end"}}>
+                <div className="field" style={{flex:1,minWidth:130}}>
+                  <label>Rank</label>
+                  <select className="input" value={newRank} onChange={e=>setNewRank(e.target.value)}>
+                    {RANK_OPTS.map(o=>(
+                      <option key={o.v} value={o.v} disabled={usedSetupRanks.has(o.v)}>
+                        {o.l}{usedSetupRanks.has(o.v)?" ✓":""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="field" style={{flex:1,minWidth:110}}>
+                  <label>Prize (USD)</label>
+                  <div className="fee-wrap"><span className="fee-pre">$</span><input className="input fee-inp" placeholder="10,000" value={newPrize} onChange={e=>setNewPrize(e.target.value)}/></div>
+                </div>
+                <button className="btn btn-pri btn-xs" style={{marginBottom:1}} onClick={addPrizeRow}><IPlus s={13}/> Add</button>
               </div>
             </div>
-          </>}
-        </>}
-      </div>
+          )}
+        </div>
+
+        {/* ── PHASE 2: Enter MB# only ── */}
+        {sortedSetup.length>0&&(
+          <div className="panel">
+            <div className="panel-hdr"><h2>Enter results — MB# only</h2></div>
+            <div className="fentry-hdr">
+              <div className="fentry-c1">FINAL RESULT</div>
+              <div className="fentry-c2">PRIZE</div>
+              <div className="fentry-c3">MB#</div>
+              <div className="fentry-c4">NAME</div>
+              <div className="fentry-c5">TIER</div>
+            </div>
+            {sortedSetup.map(p=>{
+              const r=results[p.rank]||{memberId:"",name:""};
+              const resolved=r.memberId?resolveName(r.memberId):"";
+              return(
+                <div className="fentry-row" key={p.rank}>
+                  <div className="fentry-c1">
+                    <span className="fsetup-medal">{MEDAL[p.rank]||""}</span>
+                    <span className="fentry-rank-lbl">{rankLabel(p.rank)}</span>
+                  </div>
+                  <div className="fentry-c2">
+                    <span className="fsetup-prize-lbl">{p.prize?"$"+Number(String(p.prize).replace(/[^0-9.]/g,"")).toLocaleString("en-US"):""}</span>
+                  </div>
+                  <div className="fentry-c3">
+                    <input className="input fentry-mb" value={r.memberId}
+                      placeholder="MB#"
+                      onChange={e=>setMb(p.rank,e.target.value)}/>
+                  </div>
+                  <div className="fentry-c4 namec">
+                    {resolved||r.name||<span className="dim">—</span>}
+                  </div>
+                  <div className="fentry-c5">
+                    {resolveTier(r.memberId)?<span className="tbadge">{resolveTier(r.memberId)}</span>:<span className="dim">—</span>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── Prize board (display card) ── */}
+        {sortedSetup.some(p=>results[p.rank]?.memberId)&&(
+          <div className="panel">
+            <div className="panel-hdr"><h2>Prize board</h2></div>
+            <div className="prize-card">
+              <div className="prize-card-title">{final.name||"Final Results"}</div>
+              {sortedSetup.map(p=>{
+                const r=results[p.rank];
+                if(!r?.memberId)return null;
+                const name=resolveName(r.memberId)||r.name||"—";
+                const prize=p.prize?"$"+Number(String(p.prize).replace(/[^0-9.]/g,"")).toLocaleString("en-US"):"";
+                return(
+                  <div className="pcr" key={p.rank}>
+                    <div className="pcr-left">
+                      <span className="pcr-medal">{MEDAL[p.rank]||""}</span>
+                      <div>
+                        <div className="pcr-mb">{r.memberId}</div>
+                        <div style={{display:"flex",alignItems:"center",gap:6}}>
+                          <div className="pcr-name">{name}</div>
+                          {resolveTier(r.memberId)&&<span className="tbadge" style={{fontSize:10}}>{resolveTier(r.memberId)}</span>}
+                        </div>
+                        <div className="pcr-rank">{rankLabel(p.rank)}</div>
+                      </div>
+                    </div>
+                    {prize&&<div className="pcr-prize">{prize}</div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </>}
     </div>
   );
 }
@@ -953,7 +1052,7 @@ const CSS=`
 .sbox-wide{padding:10px 13px;}
 .sclear{background:none;border:none;cursor:pointer;color:var(--ink-s);display:flex;padding:0;}
 .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-.tbl{width:100%;border-collapse:collapse;font-size:12.5px;}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px;} .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;overflow-y:visible!important;}
 .tbl th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-s);padding:8px 11px;border-bottom:1px solid var(--line);background:var(--paper);white-space:nowrap;}
 .tbl td{padding:7px 11px;border-bottom:1px solid var(--line);vertical-align:middle;}
 .tbl tr:last-child td{border-bottom:none;}
@@ -981,7 +1080,7 @@ const CSS=`
 .pop-sheet{background:var(--card);border-radius:16px 16px 0 0;width:100%;padding:0 0 24px;max-height:60vh;overflow-y:auto;}
 .pop-handle{width:36px;height:4px;background:var(--line);border-radius:2px;margin:10px auto 8px;}
 .pop-ttl{font-size:11px;font-weight:700;color:var(--ink-s);text-transform:uppercase;letter-spacing:.06em;padding:6px 14px 4px;}
-.pop-drop{position:absolute;top:calc(100% + 5px);left:0;z-index:40;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.14);padding:6px;min-width:150px;display:flex;flex-direction:column;gap:2px;}
+.pop-drop{position:absolute;top:calc(100% + 5px);left:0;z-index:40;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.14);padding:6px;min-width:150px;display:flex;flex-direction:column;gap:2px;} .bc{position:relative;display:inline-block;z-index:1;}
 .pi{display:flex;align-items:center;gap:8px;background:none;border:none;text-align:left;padding:10px 14px;cursor:pointer;font-size:13px;font-weight:600;color:var(--ink);width:100%;font-family:inherit;}
 .pi:hover{background:var(--paper);}
 .pi-on{background:var(--acc-s);}
@@ -1068,6 +1167,39 @@ const CSS=`
 .pcr-name{font-size:13px;font-weight:700;color:#fff;}
 .pcr-rank{font-size:10.5px;color:#c8a86b;font-weight:600;}
 .pcr-prize{font-size:15px;font-weight:700;color:#f0d090;white-space:nowrap;}
+
+/* ── Final setup table ── */
+.fsetup-hdr{display:grid;grid-template-columns:1fr 140px;padding:8px 13px;background:var(--paper);border-bottom:1px solid var(--line);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-s);}
+.fsetup-row{display:grid;grid-template-columns:1fr 140px auto;align-items:center;padding:10px 13px;border-bottom:1px solid var(--line);gap:8px;}
+.fsetup-row:last-child{border-bottom:none;}
+.fsetup-col-rank{display:flex;align-items:center;gap:7px;font-weight:700;font-size:13px;}
+.fsetup-col-prize{display:flex;align-items:center;}
+.fsetup-medal{font-size:20px;line-height:1;}
+.fsetup-rank-lbl{color:var(--acc);font-weight:700;font-size:13px;text-transform:uppercase;}
+.fsetup-prize-lbl{font-size:14px;font-weight:700;color:var(--good);}
+.fsetup-add{padding:12px 13px;border-top:1px solid var(--line);background:var(--paper);}
+
+/* ── Final entry table ── */
+.fentry-hdr{display:grid;grid-template-columns:140px 110px 80px 1fr 70px;padding:8px 13px;background:#1a1410;color:#c8a86b;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
+.fentry-row{display:grid;grid-template-columns:140px 110px 80px 1fr 70px;align-items:center;padding:10px 13px;border-bottom:1px solid var(--line);gap:6px;}
+.fentry-row:last-child{border-bottom:none;}
+.fentry-c1{display:flex;align-items:center;gap:6px;}
+.fentry-c2{color:var(--good);font-weight:700;font-size:13px;}
+.fentry-c3{}
+.fentry-c4{font-size:13px;color:var(--ink);font-weight:600;} .fentry-c5{display:flex;align-items:center;}
+.fentry-rank-lbl{color:var(--acc);font-weight:700;font-size:12px;text-transform:uppercase;}
+.fentry-mb{width:82px!important;padding:6px 8px!important;font-size:13px!important;}
+@media(max-width:640px){
+  .fsetup-hdr,.fsetup-row{grid-template-columns:1fr 110px auto;}
+  .fentry-hdr,.fentry-row{grid-template-columns:110px 80px 70px 1fr 60px;}
+  .fentry-hdr{font-size:9px;}
+  .fentry-mb{width:62px!important;}
+}
+@media(max-width:400px){
+  .fentry-hdr,.fentry-row{grid-template-columns:90px 70px 64px 1fr 52px;padding:8px 8px;gap:4px;}
+  .fsetup-rank-lbl,.fentry-rank-lbl{font-size:10.5px;}
+  .fentry-mb{width:56px!important;}
+}
 `;
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
