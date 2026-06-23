@@ -48,7 +48,8 @@ const ST_CLS={normal:"b-normal",cancel:"b-cancel",waiting:"b-waiting"};
 /* ── LocalStorage keys (fallback when no Sheet) ── */
 const LS={
   GUESTS:"egm3_guests", ROUNDS:"egm3_rounds", FEE:"egm3_fee",
-  DIR:"egm3_dir", EVENT:"egm3_event", SHEET_URL:"egm3_sheet_url",
+  DIR:"egm3_dir", EVENT:"egm3_event",
+  BIN_ID:"egm3_bin_id", API_KEY:"egm3_api_key",
   FINAL:"egm3_final"
 };
 function lsGet(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
@@ -85,35 +86,34 @@ function dlCSV(name,rows){
   document.body.removeChild(a);URL.revokeObjectURL(u);
 }
 
-/* ── Google Sheets Sync ──
-   Apps Script returns proper JSON — use fetch with cors mode.
-   Read  → GET  ?action=read          (Apps Script doGet)
-   Write → GET  ?action=write&data=…  (base64 payload, also doGet)
-   Using GET for both avoids POST redirect issues entirely.
+/* ── Cloud Sync via JSONBin.io ──
+   JSONBin is a free REST API with proper CORS — works from any browser.
+   No server needed. Data stored as JSON in a private "bin".
+   Setup: create free account at jsonbin.io, create a bin, paste the Bin ID + API key in Settings.
 ── */
-async function sheetCall(url, params){
-  const qs = Object.entries(params)
-    .map(([k,v]) => k + "=" + encodeURIComponent(v)).join("&");
-  const fullUrl = url + "?" + qs;
-  // Try fetch first
-  try {
-    const res = await fetch(fullUrl, {method:"GET", redirect:"follow"});
-    const text = await res.text();
-    // Strip JSONP wrapper if present: callback({...})
-    const clean = text.replace(/^[^(]+\(/, "").replace(/\);?\s*$/, "").trim();
-    return JSON.parse(clean);
-  } catch(e) {
-    throw new Error("Fetch failed: " + e.message);
-  }
+async function syncRead(binId, apiKey){
+  const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+    method: "GET",
+    headers: {
+      "X-Master-Key": apiKey,
+      "X-Bin-Meta": "false"
+    }
+  });
+  if(!res.ok) throw new Error("HTTP " + res.status + " — check Bin ID and API key");
+  return res.json();
 }
 
-async function sheetRead(url){
-  return sheetCall(url, {action:"read"});
-}
-
-async function sheetWrite(url, payload){
-  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-  return sheetCall(url, {action:"write", data: encoded});
+async function syncWrite(binId, apiKey, payload){
+  const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Master-Key": apiKey
+    },
+    body: JSON.stringify(payload)
+  });
+  if(!res.ok) throw new Error("HTTP " + res.status + " — check Bin ID and API key");
+  return res.json();
 }
 
 /* ── App ── */
@@ -123,7 +123,8 @@ function App(){
   const [finalRound,setFinalRound]=useState(()=>lsGet(LS.FINAL,{enabled:false,name:"Final",prizePool:[]}));
   const [feeAmt,setFeeAmt]=useState(()=>lsGet(LS.FEE,50));
   const [eventName,setEventName]=useState(()=>lsGet(LS.EVENT,""));
-  const [sheetUrl,setSheetUrl]=useState(()=>lsGet(LS.SHEET_URL,""));
+  const [binId,setBinId]=useState(()=>lsGet(LS.BIN_ID,""));
+  const [apiKey,setApiKey]=useState(()=>lsGet(LS.API_KEY,""));
   const [syncing,setSyncing]=useState(false);
   const [syncMsg,setSyncMsg]=useState("");
   const [tab,setTab]=useState("overview");
@@ -145,7 +146,8 @@ function App(){
   useEffect(()=>lsSet(LS.ROUNDS,rounds),[rounds]);
   useEffect(()=>lsSet(LS.FEE,feeAmt),[feeAmt]);
   useEffect(()=>lsSet(LS.EVENT,eventName),[eventName]);
-  useEffect(()=>lsSet(LS.SHEET_URL,sheetUrl),[sheetUrl]);
+  useEffect(()=>lsSet(LS.BIN_ID,binId),[binId]);
+  useEffect(()=>lsSet(LS.API_KEY,apiKey),[apiKey]);
   useEffect(()=>lsSet(LS.FINAL,finalRound),[finalRound]);
 
   function ef(){return{memberId:"",name:"",tier:"",feeStatus:"unpaid",round:"",status:"normal",note:""};}
@@ -154,39 +156,39 @@ function App(){
     const m={};dirRef.current.forEach(d=>m[d.id]={name:d.name,tier:d.tier||""});return m;
   },[dirVer]);
 
-  /* Google Sheets sync */
-  async function syncToSheet(){
-    if(!sheetUrl){setSyncMsg("⚠️ No Sheet URL — go to Settings.");return;}
+  /* Cloud sync via JSONBin */
+  async function syncToCloud(){
+    if(!binId||!apiKey){setSyncMsg("⚠️ No Bin ID / API Key — go to Settings.");return;}
     setSyncing(true);setSyncMsg("Saving…");
     try{
-      const payload={action:"write",eventName,guests,rounds,finalRound,feeAmt,timestamp:new Date().toISOString()};
-      const res=await sheetWrite(sheetUrl,payload);
-      setSyncMsg(res.ok?"✓ Saved to Sheet":"✗ "+(res.error||"Unknown error"));
+      const payload={eventName,guests,rounds,finalRound,feeAmt,savedAt:new Date().toISOString()};
+      await syncWrite(binId,apiKey,payload);
+      setSyncMsg("✓ Saved");
     }catch(e){setSyncMsg("✗ "+e.message);}
     setSyncing(false);
     setTimeout(()=>setSyncMsg(""),5000);
   }
 
-  async function syncFromSheet(silent){
-    if(!sheetUrl)return;
+  async function syncFromCloud(silent){
+    if(!binId||!apiKey)return;
     if(!silent){setSyncing(true);setSyncMsg("Loading…");}
     try{
-      const res=await sheetRead(sheetUrl);
-      if(res.ok){
-        if(res.guests)setGuests(res.guests);
-        if(res.rounds)setRounds(res.rounds);
-        if(res.finalRound)setFinalRound(res.finalRound);
-        if(res.feeAmt!=null)setFeeAmt(res.feeAmt);
-        if(res.eventName)setEventName(res.eventName);
-        if(!silent)setSyncMsg("✓ Loaded from Sheet");
-      }else{if(!silent)setSyncMsg("✗ "+(res.error||"No data"));}
+      const data=await syncRead(binId,apiKey);
+      if(data){
+        if(data.guests)setGuests(data.guests);
+        if(data.rounds)setRounds(data.rounds);
+        if(data.finalRound)setFinalRound(data.finalRound);
+        if(data.feeAmt!=null)setFeeAmt(data.feeAmt);
+        if(data.eventName)setEventName(data.eventName);
+        if(!silent)setSyncMsg("✓ Loaded — "+new Date(data.savedAt||Date.now()).toLocaleTimeString());
+      }
     }catch(e){if(!silent)setSyncMsg("✗ "+e.message);}
     if(!silent){setSyncing(false);setTimeout(()=>setSyncMsg(""),5000);}
   }
 
-  // Auto-pull from Sheet when app first opens (silent)
+  // Auto-pull on open
   useEffect(()=>{
-    if(sheetUrl)syncFromSheet(true);
+    if(binId&&apiKey)syncFromCloud(true);
   },[]);
 
   /* Derived */
@@ -327,9 +329,9 @@ function App(){
           </div>
         </div>
         <div className="hactions">
-          {sheetUrl&&<>
-            <button className="btn btn-ghost btn-xs" onClick={syncFromSheet} disabled={syncing} title="Pull from Sheet"><IRefresh s={13}/></button>
-            <button className="btn btn-ghost btn-xs" onClick={syncToSheet} disabled={syncing} title="Push to Sheet"><ICloud s={13}/></button>
+          {binId&&apiKey&&<>
+            <button className="btn btn-ghost btn-xs" onClick={()=>syncFromCloud(false)} disabled={syncing} title="Pull latest data"><IRefresh s={13}/></button>
+            <button className="btn btn-ghost btn-xs" onClick={syncToCloud} disabled={syncing} title="Push / save data"><ICloud s={13}/></button>
           </>}
           <button className="btn btn-ghost btn-xs" onClick={exportCSV}><IDL s={13}/></button>
           <button className="btn btn-sec btn-xs" onClick={()=>setShowBulk(true)}><IBulk s={13}/> Bulk</button>
@@ -417,7 +419,7 @@ function App(){
           rounds={rounds} setRounds={setRounds}
           feeAmt={feeAmt} setFeeAmt={setFeeAmt}
           eventName={eventName} setEventName={setEventName}
-          sheetUrl={sheetUrl} setSheetUrl={setSheetUrl}
+          binId={binId} setBinId={setBinId} apiKey={apiKey} setApiKey={setApiKey}
           roundCounts={roundCounts}
           dirRef={dirRef} dirVer={dirVer} setDirVer={setDirVer}
         />}
@@ -748,7 +750,7 @@ function FinalTab({finalRound,setFinalRound,guests}){
 
 /* ── Settings Tab ── */
 const DPAGE=50;
-function SettingsTab({rounds,setRounds,feeAmt,setFeeAmt,eventName,setEventName,sheetUrl,setSheetUrl,roundCounts,dirRef,dirVer,setDirVer}){
+function SettingsTab({rounds,setRounds,feeAmt,setFeeAmt,eventName,setEventName,binId,setBinId,apiKey,setApiKey,roundCounts,dirRef,dirVer,setDirVer}){
   const [df,setDf]=useState({id:"",name:"",tier:""});
   const [dfErr,setDfErr]=useState("");
   const [bulk,setBulk]=useState("");
@@ -808,77 +810,41 @@ function SettingsTab({rounds,setRounds,feeAmt,setFeeAmt,eventName,setEventName,s
 
       {/* Sync */}
       <div className="panel">
-        <div className="panel-hdr"><h2><ICloud s={14}/> Google Sheets sync</h2></div>
-        <p className="hint">Paste your Apps Script Web App URL below to sync data across devices. <a href="#sheet-guide" style={{color:"var(--accent)"}}>Setup guide ↓</a></p>
-        <div className="settings-row">
-          <label>Web App URL</label>
-          <input className="input" value={sheetUrl} onChange={e=>setSheetUrl(e.target.value.trim())}
-            placeholder="https://script.google.com/macros/s/…/exec" style={{maxWidth:400,fontSize:11}}/>
+        <div className="panel-hdr"><h2><ICloud s={14}/> Cloud sync (JSONBin)</h2></div>
+        <p className="hint">
+          Sync data across desktop &amp; mobile using <strong>JSONBin.io</strong> (free, no install needed).
+          Setup takes ~2 minutes. <a href="#jb-guide" style={{color:"var(--acc)"}}>Setup guide ↓</a>
+        </p>
+        <div className="settings-row" style={{flexWrap:"wrap",gap:8}}>
+          <label style={{minWidth:80}}>Bin ID</label>
+          <input className="input" value={binId} onChange={e=>setBinId(e.target.value.trim())}
+            placeholder="e.g. 64a3f1c8acd3cb34a8…" style={{maxWidth:300,fontSize:12}}/>
         </div>
-        <div className="sheet-guide" id="sheet-guide">
-          <div className="guide-title">📋 Setup guide (one-time, ~10 min)</div>
-          <ol className="guide-steps">
-            <li>Open your existing Google Sheet → <strong>Extensions → Apps Script</strong>.</li>
-            <li><strong>Select all &amp; delete</strong> the old code. Paste the new script below. Click 💾 Save.</li>
-            <li>⚠️ <strong>Must redeploy:</strong> Click <strong>Deploy → Manage deployments</strong> → click the ✏️ pencil on your existing deployment → change Version to <strong>"New version"</strong> → click <strong>Deploy</strong>. <em>(URL stays the same — do NOT create a new deployment.)</em></li>
-            <li>The URL in the field above is already correct — no need to change it.</li>
-            <li>Press <strong>↑ push</strong> in the header to save data to Sheet. Every device auto-loads latest data on startup.</li>
-          </ol>
-          <div className="code-block">
-            <pre>{`// ── PASTE THIS ENTIRE SCRIPT → Save → Deploy new version ──
-
-function getSheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  return ss.getSheetByName('EventData') || ss.insertSheet('EventData');
-}
-
-function respond(data) {
-  // Return JSON with CORS headers so any website can fetch it
-  return ContentService
-    .createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-// ALL requests go through doGet (GET method)
-// ?action=read              → return saved data
-// ?action=write&data=BASE64 → decode and save data
-function doGet(e) {
-  const action = (e.parameter && e.parameter.action) || "read";
-
-  if (action === "read") {
-    try {
-      const sheet = getSheet();
-      const val = sheet.getRange(1, 1).getValue();
-      if (!val) return respond({ ok: false, error: "No data saved yet" });
-      const saved = JSON.parse(val);
-      return respond({ ok: true, ...saved });
-    } catch(err) {
-      return respond({ ok: false, error: "Read error: " + err.message });
-    }
-  }
-
-  if (action === "write") {
-    try {
-      const encoded = e.parameter.data;
-      const decoded = decodeURIComponent(escape(
-        Utilities.newBlob(Utilities.base64Decode(encoded)).getDataAsString()
-      ));
-      const payload = JSON.parse(decoded);
-      const sheet = getSheet();
-      sheet.clearContents();
-      sheet.getRange(1, 1).setValue(JSON.stringify(payload));
-      return respond({ ok: true, timestamp: new Date().toISOString() });
-    } catch(err) {
-      return respond({ ok: false, error: "Write error: " + err.message });
-    }
-  }
-
-  return respond({ ok: false, error: "Unknown action: " + action });
-}
-
-// Keep doPost as alias (not used but harmless)
-function doPost(e) { return doGet(e); }`}</pre>
+        <div className="settings-row" style={{flexWrap:"wrap",gap:8}}>
+          <label style={{minWidth:80}}>API Key</label>
+          <input className="input" value={apiKey} onChange={e=>setApiKey(e.target.value.trim())}
+            placeholder="$2a$10$…" style={{maxWidth:300,fontSize:12}} type="password"/>
+        </div>
+        {binId&&apiKey&&(
+          <div style={{padding:"0 13px 13px",display:"flex",gap:8}}>
+            <button className="btn btn-sec btn-xs" onClick={()=>syncFromCloud(false)} disabled={syncing}>
+              <IRefresh s={13}/> Pull latest
+            </button>
+            <button className="btn btn-pri btn-xs" onClick={syncToCloud} disabled={syncing}>
+              <ICloud s={13}/> Push / save
+            </button>
           </div>
+        )}
+        <div className="sheet-guide" id="jb-guide">
+          <div className="guide-title">📋 Setup guide (one-time, ~2 min)</div>
+          <ol className="guide-steps">
+            <li>Go to <a href="https://jsonbin.io" target="_blank" style={{color:"var(--acc)"}}>jsonbin.io</a> → click <strong>Sign Up</strong> (free).</li>
+            <li>After login, go to <strong>API Keys</strong> (top menu) → copy your <strong>Secret Key</strong> → paste into <em>API Key</em> above.</li>
+            <li>Click <strong>Bins → Create Bin</strong> → paste <code>{"{}"}</code> as content → Save. Copy the <strong>Bin ID</strong> from the URL → paste into <em>Bin ID</em> above.</li>
+            <li>Click <strong>↑ Push / save</strong> to upload your current data.</li>
+            <li>On any other device: open the app, go to Settings, enter the same Bin ID + API Key → click <strong>↓ Pull latest</strong>. Done — data synced!</li>
+            <li>💡 The app auto-pulls on startup if Bin ID + API Key are saved.</li>
+          </ol>
         </div>
       </div>
 
