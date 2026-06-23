@@ -86,10 +86,24 @@ function dlCSV(name,rows){
 }
 
 /* ── Google Sheets Sync ── */
-async function sheetFetch(url,payload){
-  const res=await fetch(url,{method:"POST",body:JSON.stringify(payload),headers:{"Content-Type":"text/plain"}});
+// READ uses GET to avoid Apps Script POST-redirect CORS issues
+async function sheetRead(url){
+  const res=await fetch(url+"?action=read",{method:"GET",redirect:"follow"});
   if(!res.ok)throw new Error("HTTP "+res.status);
-  return res.json();
+  const text=await res.text();
+  try{return JSON.parse(text);}catch(e){throw new Error("Bad JSON: "+text.slice(0,80));}
+}
+// WRITE uses POST — Apps Script redirects to googleusercontent, redirect:follow handles it
+async function sheetWrite(url,payload){
+  const res=await fetch(url,{
+    method:"POST",
+    body:JSON.stringify(payload),
+    headers:{"Content-Type":"text/plain;charset=utf-8"},
+    redirect:"follow",
+  });
+  if(!res.ok)throw new Error("HTTP "+res.status);
+  const text=await res.text();
+  try{return JSON.parse(text);}catch(e){throw new Error("Bad JSON: "+text.slice(0,80));}
 }
 
 /* ── App ── */
@@ -132,34 +146,38 @@ function App(){
 
   /* Google Sheets sync */
   async function syncToSheet(){
-    if(!sheetUrl){setSyncMsg("⚠️ No Sheet URL set. Go to Settings.");return;}
-    setSyncing(true);setSyncMsg("Syncing…");
+    if(!sheetUrl){setSyncMsg("⚠️ No Sheet URL — go to Settings.");return;}
+    setSyncing(true);setSyncMsg("Saving…");
     try{
       const payload={action:"write",eventName,guests,rounds,finalRound,feeAmt,timestamp:new Date().toISOString()};
-      const res=await sheetFetch(sheetUrl,payload);
-      setSyncMsg(res.ok?"✓ Synced to Sheet":"✗ "+res.error);
+      const res=await sheetWrite(sheetUrl,payload);
+      setSyncMsg(res.ok?"✓ Saved to Sheet":"✗ "+(res.error||"Unknown error"));
     }catch(e){setSyncMsg("✗ "+e.message);}
     setSyncing(false);
-    setTimeout(()=>setSyncMsg(""),4000);
+    setTimeout(()=>setSyncMsg(""),5000);
   }
 
-  async function syncFromSheet(){
-    if(!sheetUrl){setSyncMsg("⚠️ No Sheet URL set.");return;}
-    setSyncing(true);setSyncMsg("Loading from Sheet…");
+  async function syncFromSheet(silent){
+    if(!sheetUrl)return;
+    if(!silent){setSyncing(true);setSyncMsg("Loading…");}
     try{
-      const res=await sheetFetch(sheetUrl,{action:"read"});
+      const res=await sheetRead(sheetUrl);
       if(res.ok){
         if(res.guests)setGuests(res.guests);
         if(res.rounds)setRounds(res.rounds);
         if(res.finalRound)setFinalRound(res.finalRound);
         if(res.feeAmt!=null)setFeeAmt(res.feeAmt);
         if(res.eventName)setEventName(res.eventName);
-        setSyncMsg("✓ Loaded from Sheet");
-      }else setSyncMsg("✗ "+res.error);
-    }catch(e){setSyncMsg("✗ "+e.message);}
-    setSyncing(false);
-    setTimeout(()=>setSyncMsg(""),4000);
+        if(!silent)setSyncMsg("✓ Loaded from Sheet");
+      }else{if(!silent)setSyncMsg("✗ "+(res.error||"No data"));}
+    }catch(e){if(!silent)setSyncMsg("✗ "+e.message);}
+    if(!silent){setSyncing(false);setTimeout(()=>setSyncMsg(""),5000);}
   }
+
+  // Auto-pull from Sheet when app first opens (silent)
+  useEffect(()=>{
+    if(sheetUrl)syncFromSheet(true);
+  },[]);
 
   /* Derived */
   const roundCounts=useMemo(()=>{
@@ -790,33 +808,51 @@ function SettingsTab({rounds,setRounds,feeAmt,setFeeAmt,eventName,setEventName,s
         <div className="sheet-guide" id="sheet-guide">
           <div className="guide-title">📋 Setup guide (one-time, ~10 min)</div>
           <ol className="guide-steps">
-            <li>Open <a href="https://sheets.google.com" target="_blank">Google Sheets</a>, create a new sheet named <code>EventData</code>.</li>
+            <li>Open <a href="https://sheets.google.com" target="_blank">Google Sheets</a> → create a new spreadsheet. Inside it, create a sheet tab named exactly <code>EventData</code>.</li>
             <li>Go to <strong>Extensions → Apps Script</strong>.</li>
-            <li>Replace all code with the script below, click <strong>Save</strong>.</li>
-            <li>Click <strong>Deploy → New deployment → Web app</strong>. Set <em>Execute as: Me</em>, <em>Who has access: Anyone</em>. Click Deploy.</li>
-            <li>Copy the Web App URL and paste it above.</li>
-            <li>Click the ↑ push button in the header to save your data to the Sheet.</li>
+            <li><strong>Delete all existing code</strong>, paste the full script below, click 💾 Save.</li>
+            <li>Click <strong>Deploy → New deployment</strong>. Type: <em>Web app</em>. Execute as: <em>Me</em>. Who has access: <strong>Anyone</strong>. Click <strong>Deploy</strong> → authorize when prompted.</li>
+            <li>Copy the <strong>Web App URL</strong> (looks like <code>https://script.google.com/macros/s/ABC…/exec</code>) and paste it in the field above.</li>
+            <li>⚠️ If you already deployed before with the old script: go to <strong>Deploy → Manage deployments → Edit (pencil) → New version → Deploy</strong>.</li>
+            <li>Press ↑ (push) in the header to save data. Any device that opens the app will auto-load the latest data from Sheet on startup.</li>
           </ol>
           <div className="code-block">
-            <pre>{`function doPost(e) {
-  const data = JSON.parse(e.postData.contents);
-  const sheet = SpreadsheetApp.getActiveSpreadsheet()
-    .getSheetByName('EventData') || SpreadsheetApp.getActiveSpreadsheet().insertSheet('EventData');
-  
-  if (data.action === 'write') {
-    sheet.clearContents();
-    sheet.getRange(1,1).setValue(JSON.stringify(data));
-    return ContentService.createTextOutput(JSON.stringify({ok:true}))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-  
-  if (data.action === 'read') {
-    const val = sheet.getRange(1,1).getValue();
-    if (!val) return ContentService.createTextOutput(JSON.stringify({ok:false,error:'No data'}))
-      .setMimeType(ContentService.MimeType.JSON);
+            <pre>{`// ── Paste this entire script into Apps Script, then redeploy ──
+
+function getSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  return ss.getSheetByName('EventData') || ss.insertSheet('EventData');
+}
+
+function respond(data) {
+  return ContentService
+    .createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// READ: called via GET ?action=read
+function doGet(e) {
+  const sheet = getSheet();
+  const val = sheet.getRange(1, 1).getValue();
+  if (!val) return respond({ ok: false, error: 'No data saved yet' });
+  try {
     const saved = JSON.parse(val);
-    return ContentService.createTextOutput(JSON.stringify({ok:true,...saved}))
-      .setMimeType(ContentService.MimeType.JSON);
+    return respond({ ok: true, ...saved });
+  } catch(err) {
+    return respond({ ok: false, error: 'Parse error: ' + err.message });
+  }
+}
+
+// WRITE: called via POST with JSON body
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const sheet = getSheet();
+    sheet.clearContents();
+    sheet.getRange(1, 1).setValue(JSON.stringify(data));
+    return respond({ ok: true, timestamp: new Date().toISOString() });
+  } catch(err) {
+    return respond({ ok: false, error: err.message });
   }
 }`}</pre>
           </div>
