@@ -790,7 +790,7 @@ function SyncPanel({binId,setBinId,apiKey,setApiKey,syncing,onPush,onPull}){
           <label>API Key (Master Key)</label>
           <input className="input" value={localKey}
             onChange={e=>{ setLocalKey(e.target.value); setSaved(false); }}
-            placeholder="Paste your $2a$10$… key here"
+            placeholder="Paste Master Key here"
             autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="false"/>
         </div>
 
@@ -823,8 +823,7 @@ function SyncPanel({binId,setBinId,apiKey,setApiKey,syncing,onPush,onPull}){
         <ol className="guide-steps">
           <li>Go to <a href="https://jsonbin.io" target="_blank" style={{color:"var(--acc)"}}>jsonbin.io</a> → Sign Up (free).</li>
           <li>Top menu → <strong>API Keys</strong> → copy your <strong>Secret Key</strong> → paste into <em>API Key</em> above.</li>
-          <li>Top menu → <strong>Bins → Create Bin</strong> → paste the JSON below as content → Save → copy the <strong>Bin ID</strong> from the URL.</li>
-          <li className="code-inline"><code>{"{\"guests\":[]}"}</code></li>
+          <li>Top menu → <strong>Bins → Create Bin</strong> → paste <code style={{background:"var(--neu-s)",padding:"1px 4px",borderRadius:3}}>{"{"+"}"}</code> as content → Save → copy <strong>Bin ID</strong> from URL → paste above.</li>
           <li>Click <strong>Save credentials</strong>, then <strong>Push / save</strong> to upload data.</li>
           <li>On mobile: open app → Settings → enter same Bin ID + API Key → Save → Pull latest.</li>
         </ol>
