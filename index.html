@@ -325,15 +325,15 @@ function App(){
             <SC icon={<IClock s={17}/>} label="Waiting" value={stats.waiting.length} tone="neutral"/>
           </div>
           <div className="panel">
-            <div className="panel-hdr" style={{flexDirection:"column",alignItems:"stretch",gap:8}}>
-              <div className="ftabs">
+            <div className="panel-hdr" style={{flexDirection:"column",alignItems:"stretch",gap:0,padding:0}}>
+              <div className="ftabs" style={{padding:"0 4px",borderBottom:"1px solid var(--line)"}}>
                 {FTABS.map(([id,lbl,cnt])=>(
                   <button key={id} className={cx("ftab",filterTab===id&&"ftab-on")} onClick={()=>setFilterTab(id)}>
                     {lbl}<span className="ftab-cnt">{cnt}</span>
                   </button>
                 ))}
               </div>
-              <div className="sbox">
+              <div className="sbox" style={{margin:"8px 10px",borderRadius:8}}>
                 <ISearch s={13}/>
                 <input placeholder="Search ID, name, note…" value={search} onChange={e=>setSearch(e.target.value)}/>
                 {search&&<button className="sclear" onClick={()=>setSearch("")}><IX s={12}/></button>}
@@ -496,7 +496,48 @@ function StBadge({g,onStatus}){
 
 /* ══ GuestTable ══ */
 function GuestTable({guests,rounds,onEdit,onDel,onAssign,onStatus,onFee,hideRound,hideStatus}){
+  const [isMobile,setIsMobile]=useState(()=>window.innerWidth<640);
+  useEffect(()=>{
+    const fn=()=>setIsMobile(window.innerWidth<640);
+    window.addEventListener("resize",fn);return()=>window.removeEventListener("resize",fn);
+  },[]);
+
   if(!guests.length)return <div className="empty">No entries.</div>;
+
+  // ── Mobile: card layout ──
+  if(isMobile){
+    return(
+      <div className="gcard-list">
+        {guests.map(g=>(
+          <div key={g.eid} className="gcard">
+            {/* Row 1: ID + Tier + actions */}
+            <div className="gcard-top">
+              <div className="gcard-id-block">
+                <span className="gcard-id">{g.memberId}</span>
+                {g.tier&&<span className="tbadge">{g.tier}</span>}
+              </div>
+              <div className="gcard-acts">
+                <button className="ib" onClick={()=>onEdit(g)}><IEdit s={14}/></button>
+                <button className="ib ib-d" onClick={()=>onDel(g.eid)}><ITrash s={14}/></button>
+              </div>
+            </div>
+            {/* Row 2: Name */}
+            <div className="gcard-name">{g.name}</div>
+            {/* Row 3: badges */}
+            <div className="gcard-badges">
+              <FeeBadge g={g} onFee={onFee}/>
+              {!hideRound&&<RoundBadge g={g} rounds={rounds} onAssign={onAssign}/>}
+              {!hideStatus&&<StBadge g={g} onStatus={onStatus}/>}
+            </div>
+            {/* Row 4: note if any */}
+            {g.note&&<div className="gcard-note">{g.note}</div>}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // ── Desktop: table layout ──
   return(
     <div className="tw">
       <table className="tbl">
@@ -1199,6 +1240,48 @@ const CSS=`
   .fentry-hdr,.fentry-row{grid-template-columns:90px 70px 64px 1fr 52px;padding:8px 8px;gap:4px;}
   .fsetup-rank-lbl,.fentry-rank-lbl{font-size:10.5px;}
   .fentry-mb{width:56px!important;}
+}
+
+/* ── Mobile card layout for guest list ── */
+.gcard-list{display:flex;flex-direction:column;}
+.gcard{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:7px;}
+.gcard:last-child{border-bottom:none;}
+.gcard:active{background:rgba(0,0,0,.02);}
+.gcard-top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.gcard-id-block{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+.gcard-id{font-family:ui-monospace,'SF Mono',Consolas,monospace;font-size:12px;color:var(--ink-s);font-weight:600;}
+.gcard-acts{display:flex;gap:5px;flex-shrink:0;}
+.gcard-name{font-size:15px;font-weight:700;color:var(--ink);line-height:1.3;}
+.gcard-badges{display:flex;gap:7px;flex-wrap:wrap;align-items:center;}
+.gcard-note{font-size:12px;color:var(--ink-s);background:var(--paper);padding:5px 8px;border-radius:6px;}
+
+/* ── Mobile: bigger touch targets for badges ── */
+@media(max-width:640px){
+  .content{padding:10px;}
+  .stack{gap:10px;}
+  /* Stat grid: 4 cols compact on mobile */
+  .sgrid{grid-template-columns:repeat(4,1fr);gap:6px;}
+  .sc{padding:9px 8px;}
+  .sc-icon{width:20px;height:20px;border-radius:5px;margin-bottom:4px;}
+  .sc-val{font-size:15px;}
+  .sc-lbl{font-size:9.5px;}
+  .sc-sub{font-size:9px;}
+  /* Topbar compact */
+  .btitle{max-width:140px;font-size:13px;}
+  .hacts{gap:4px;}
+  .btn-xs{padding:6px 9px;font-size:11.5px;}
+  /* Filter tabs: no padding shrink */
+  .ftabs{gap:0;}
+  .ftab{padding:8px 8px;font-size:11px;}
+  .ftab-cnt{font-size:9.5px;padding:0 4px;}
+  /* Search box */
+  .sbox{padding:8px 10px;}
+  /* Bigger badge buttons for touch */
+  .bb{padding:5px 11px;font-size:12px;min-height:34px;}
+}
+@media(max-width:380px){
+  .sgrid{grid-template-columns:repeat(2,1fr);}
+  .sc-lbl{font-size:9px;}
 }
 `;
 
