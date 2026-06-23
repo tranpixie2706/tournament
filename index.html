@@ -85,25 +85,42 @@ function dlCSV(name,rows){
   document.body.removeChild(a);URL.revokeObjectURL(u);
 }
 
-/* ── Google Sheets Sync ── */
-// READ uses GET to avoid Apps Script POST-redirect CORS issues
-async function sheetRead(url){
-  const res=await fetch(url+"?action=read",{method:"GET",redirect:"follow"});
-  if(!res.ok)throw new Error("HTTP "+res.status);
-  const text=await res.text();
-  try{return JSON.parse(text);}catch(e){throw new Error("Bad JSON: "+text.slice(0,80));}
-}
-// WRITE uses POST — Apps Script redirects to googleusercontent, redirect:follow handles it
-async function sheetWrite(url,payload){
-  const res=await fetch(url,{
-    method:"POST",
-    body:JSON.stringify(payload),
-    headers:{"Content-Type":"text/plain;charset=utf-8"},
-    redirect:"follow",
+/* ── Google Sheets Sync via JSONP ──
+   Apps Script blocks fetch() from GitHub Pages due to CORS.
+   JSONP (script tag injection) bypasses this completely — no server needed.
+── */
+function jsonp(url, params){
+  return new Promise((resolve, reject)=>{
+    const cbName = "__egmCb_" + Date.now();
+    const timeout = setTimeout(()=>{
+      cleanup(); reject(new Error("Timeout — check Sheet URL and deployment"));
+    }, 12000);
+    function cleanup(){
+      delete window[cbName];
+      const el = document.getElementById(cbName);
+      if(el) el.remove();
+    }
+    window[cbName] = function(data){
+      clearTimeout(timeout); cleanup(); resolve(data);
+    };
+    const qs = Object.entries({...params, callback: cbName})
+      .map(([k,v])=>k+"="+encodeURIComponent(v)).join("&");
+    const script = document.createElement("script");
+    script.id = cbName;
+    script.src = url + "?" + qs;
+    script.onerror = ()=>{ clearTimeout(timeout); cleanup(); reject(new Error("Script load failed — check Sheet URL")); };
+    document.head.appendChild(script);
   });
-  if(!res.ok)throw new Error("HTTP "+res.status);
-  const text=await res.text();
-  try{return JSON.parse(text);}catch(e){throw new Error("Bad JSON: "+text.slice(0,80));}
+}
+
+async function sheetRead(url){
+  return jsonp(url, {action:"read"});
+}
+
+async function sheetWrite(url, payload){
+  // POST data as base64 via JSONP (GET param) — Apps Script decodes it
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  return jsonp(url, {action:"write", data: encoded});
 }
 
 /* ── App ── */
@@ -808,52 +825,66 @@ function SettingsTab({rounds,setRounds,feeAmt,setFeeAmt,eventName,setEventName,s
         <div className="sheet-guide" id="sheet-guide">
           <div className="guide-title">📋 Setup guide (one-time, ~10 min)</div>
           <ol className="guide-steps">
-            <li>Open <a href="https://sheets.google.com" target="_blank">Google Sheets</a> → create a new spreadsheet. Inside it, create a sheet tab named exactly <code>EventData</code>.</li>
-            <li>Go to <strong>Extensions → Apps Script</strong>.</li>
-            <li><strong>Delete all existing code</strong>, paste the full script below, click 💾 Save.</li>
-            <li>Click <strong>Deploy → New deployment</strong>. Type: <em>Web app</em>. Execute as: <em>Me</em>. Who has access: <strong>Anyone</strong>. Click <strong>Deploy</strong> → authorize when prompted.</li>
-            <li>Copy the <strong>Web App URL</strong> (looks like <code>https://script.google.com/macros/s/ABC…/exec</code>) and paste it in the field above.</li>
-            <li>⚠️ If you already deployed before with the old script: go to <strong>Deploy → Manage deployments → Edit (pencil) → New version → Deploy</strong>.</li>
-            <li>Press ↑ (push) in the header to save data. Any device that opens the app will auto-load the latest data from Sheet on startup.</li>
+            <li>Open your existing Google Sheet → <strong>Extensions → Apps Script</strong>.</li>
+            <li><strong>Select all &amp; delete</strong> the old code. Paste the new script below. Click 💾 Save.</li>
+            <li>⚠️ <strong>Must redeploy:</strong> Click <strong>Deploy → Manage deployments</strong> → click the ✏️ pencil on your existing deployment → change Version to <strong>"New version"</strong> → click <strong>Deploy</strong>. <em>(URL stays the same — do NOT create a new deployment.)</em></li>
+            <li>The URL in the field above is already correct — no need to change it.</li>
+            <li>Press <strong>↑ push</strong> in the header to save data to Sheet. Every device auto-loads latest data on startup.</li>
           </ol>
           <div className="code-block">
-            <pre>{`// ── Paste this entire script into Apps Script, then redeploy ──
+            <pre>{`// ── PASTE THIS ENTIRE SCRIPT → Save → Deploy new version ──
 
 function getSheet() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   return ss.getSheetByName('EventData') || ss.insertSheet('EventData');
 }
 
-function respond(data) {
+// JSONP response — wraps data in callback(data) so browser can read it cross-origin
+function jsonpRespond(callback, data) {
+  const json = JSON.stringify(data);
+  const output = callback ? callback + "(" + json + ");" : json;
   return ContentService
-    .createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
+    .createTextOutput(output)
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
 }
 
-// READ: called via GET ?action=read
 function doGet(e) {
-  const sheet = getSheet();
-  const val = sheet.getRange(1, 1).getValue();
-  if (!val) return respond({ ok: false, error: 'No data saved yet' });
-  try {
-    const saved = JSON.parse(val);
-    return respond({ ok: true, ...saved });
-  } catch(err) {
-    return respond({ ok: false, error: 'Parse error: ' + err.message });
+  const cb = e.parameter.callback || "";
+  const action = e.parameter.action || "read";
+
+  if (action === "read") {
+    const sheet = getSheet();
+    const val = sheet.getRange(1, 1).getValue();
+    if (!val) return jsonpRespond(cb, { ok: false, error: "No data saved yet" });
+    try {
+      const saved = JSON.parse(val);
+      return jsonpRespond(cb, { ok: true, ...saved });
+    } catch(err) {
+      return jsonpRespond(cb, { ok: false, error: "Parse error: " + err.message });
+    }
   }
+
+  if (action === "write") {
+    try {
+      // Data sent as base64-encoded JSON in ?data= param
+      const decoded = decodeURIComponent(escape(Utilities.newBlob(
+        Utilities.base64Decode(e.parameter.data)).getDataAsString()));
+      const payload = JSON.parse(decoded);
+      const sheet = getSheet();
+      sheet.clearContents();
+      sheet.getRange(1, 1).setValue(JSON.stringify(payload));
+      return jsonpRespond(cb, { ok: true, timestamp: new Date().toISOString() });
+    } catch(err) {
+      return jsonpRespond(cb, { ok: false, error: err.message });
+    }
+  }
+
+  return jsonpRespond(cb, { ok: false, error: "Unknown action" });
 }
 
-// WRITE: called via POST with JSON body
+// doPost kept as fallback (not used by current app)
 function doPost(e) {
-  try {
-    const data = JSON.parse(e.postData.contents);
-    const sheet = getSheet();
-    sheet.clearContents();
-    sheet.getRange(1, 1).setValue(JSON.stringify(data));
-    return respond({ ok: true, timestamp: new Date().toISOString() });
-  } catch(err) {
-    return respond({ ok: false, error: err.message });
-  }
+  return doGet(e);
 }`}</pre>
           </div>
         </div>
