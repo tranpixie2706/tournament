@@ -823,18 +823,19 @@ function SettingsTab({rounds,setRounds,feeAmt,setFeeAmt,eventName,setEventName,b
         <div className="settings-row" style={{flexWrap:"wrap",gap:8}}>
           <label style={{minWidth:80}}>API Key</label>
           <input className="input" value={apiKey} onChange={e=>setApiKey(e.target.value.trim())}
-            placeholder="$2a$10$…" style={{maxWidth:300,fontSize:12}} type="password"/>
+            placeholder="$2a$10$…" style={{maxWidth:300,fontSize:12}}/>
         </div>
-        {binId&&apiKey&&(
-          <div style={{padding:"0 13px 13px",display:"flex",gap:8}}>
+        <div style={{padding:"0 13px 13px",display:"flex",gap:8,flexWrap:"wrap"}}>
+          {binId&&apiKey&&<>
             <button className="btn btn-sec btn-xs" onClick={()=>syncFromCloud(false)} disabled={syncing}>
               <IRefresh s={13}/> Pull latest
             </button>
             <button className="btn btn-pri btn-xs" onClick={syncToCloud} disabled={syncing}>
               <ICloud s={13}/> Push / save
             </button>
-          </div>
-        )}
+          </>}
+          {(!binId||!apiKey)&&<p style={{fontSize:12,color:"var(--warn)",margin:0}}>⚠️ Enter both Bin ID and API Key above, then push/pull.</p>}
+        </div>
         <div className="sheet-guide" id="jb-guide">
           <div className="guide-title">📋 Setup guide (one-time, ~2 min)</div>
           <ol className="guide-steps">
