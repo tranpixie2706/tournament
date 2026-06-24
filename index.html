@@ -512,8 +512,8 @@ function GuestTable({guests,rounds,onEdit,onDel,onAssign,onStatus,onFee,hideRoun
   return(
     <div className="glist">
       {/* Header */}
-      <div className={cx("grow grow-hdr",!showBoard&&"grow-noboard")}>
-        {showBoard&&<div className="gc-board">#</div>}
+      <div className={cx("grow grow-hdr",!showBoard&&"grow-noboard",showBoard&&hideRound&&hideStatus&&"grow-roundview")}>
+        {showBoard&&<div className="gc-board">Board</div>}
         <div className="gc-id">MB#</div>
         <div className="gc-name">Name</div>
         {!hideRound&&<div className="gc-rnd">Round</div>}
@@ -522,7 +522,11 @@ function GuestTable({guests,rounds,onEdit,onDel,onAssign,onStatus,onFee,hideRoun
         <div className="gc-act"/>
       </div>
       {guests.map((g,idx)=>(
-        <div key={g.eid} className={cx("grow", !showBoard&&"grow-noboard", g.status==="cancel"&&"grow-cancel", g.status==="waiting"&&"grow-waiting")}>
+        <div key={g.eid} className={cx("grow",
+          !showBoard&&"grow-noboard",
+          showBoard&&hideRound&&hideStatus&&"grow-roundview",
+          g.status==="cancel"&&"grow-cancel",
+          g.status==="waiting"&&"grow-waiting")}>
           {showBoard&&<div className="gc-board">
             {onBoardNum
               ? <input className="gc-board-inp" type="text" inputMode="numeric"
@@ -1106,15 +1110,16 @@ html,body,#root{margin:0;padding:0;width:100%;overflow-x:hidden;}
 /* ── Compact guest row: [Board#] · MB# · Name · Round · Fee · Status ── */
 .glist{display:flex;flex-direction:column;width:100%;}
 /* With board#: 30px board + cols */
-.grow{display:grid;grid-template-columns:28px 70px 1fr 68px 56px 62px 56px;align-items:center;gap:4px;padding:7px 10px;border-bottom:1px solid var(--line);min-width:0;}
+.grow{display:grid;grid-template-columns:44px 70px 1fr 68px 56px 62px 56px;align-items:center;gap:6px;padding:7px 10px;border-bottom:1px solid var(--line);min-width:0;}
 /* Without board# (overview) */
-.grow-noboard{grid-template-columns:70px 1fr 68px 56px 62px 56px;}
+.grow-noboard{grid-template-columns:72px 1fr 68px 56px 62px 56px;}
+.grow-roundview{grid-template-columns:44px 72px 1fr 58px 52px;}
 .grow:last-child{border-bottom:none;}
 .grow:hover{background:rgba(0,0,0,.015);}
 .grow-hdr{background:var(--paper);padding:5px 10px;}
 .grow-cancel{opacity:.5;}
 .grow-waiting{background:#fdf6ff;}
-.gc-board{font-size:10px;color:var(--ink-s);text-align:center;font-weight:700;min-width:0;}
+.gc-board{font-size:9.5px;color:var(--ink-s);text-align:center;font-weight:700;min-width:0;}
 .gc-board-inp{width:100%;border:none;border-bottom:1.5px solid var(--acc);background:transparent;text-align:center;font-size:12px;font-weight:700;color:var(--ink);padding:1px 2px;outline:none;font-family:ui-monospace,'SF Mono',Consolas,monospace;}
 .gc-board-inp::placeholder{color:var(--ink-s);opacity:.5;}
 .gc-board-inp:focus{background:var(--acc-s);border-radius:3px;}
@@ -1311,11 +1316,13 @@ html,body,#root{margin:0;padding:0;width:100%;overflow-x:hidden;}
 @media(max-width:420px){
   .grow{grid-template-columns:26px 60px 1fr 60px 52px 54px 50px;gap:3px;padding:7px 8px;}
   .grow-noboard{grid-template-columns:60px 1fr 60px 52px 54px 50px;}
+  .grow-roundview{grid-template-columns:40px 64px 1fr 54px 48px;}
   .gc-id{font-size:12.5px;}
 }
 @media(max-width:360px){
   .grow{grid-template-columns:22px 54px 1fr 56px 48px 50px 44px;gap:2px;padding:6px 7px;}
   .grow-noboard{grid-template-columns:54px 1fr 56px 48px 50px 44px;}
+  .grow-roundview{grid-template-columns:36px 58px 1fr 50px 44px;}
   .gc-id{font-size:12px;}
   .gc-lastname{font-size:11px;}
 }
